@@ -1,7 +1,7 @@
 from environs import Env
 from dataclasses import dataclass
 
-from services.service_functions import get_container_id_by_service_name
+
 
 
 @dataclass
