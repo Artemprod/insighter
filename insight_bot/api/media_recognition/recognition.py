@@ -13,7 +13,7 @@ from pydub import AudioSegment
 
 import asyncio
 
-from insight_bot.config.bot_configs import load_bot_config
+from config.bot_configs import load_bot_config
 
 
 class MediaRecognition:
