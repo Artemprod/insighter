@@ -5,8 +5,8 @@ COPY . .
 
 
 RUN apt-get update -y && apt-get upgrade -y && apt-get install nano -y && pip install --upgrade pip  \
-    && pip install --upgrade setuptools \
-    && pip install -r requirements.txt && apt-get install -y ffmpeg && pip install mutagen \
+    && pip install --upgrade setuptools && pip install mutagen \
+    && pip install -r requirements.txt && apt-get install -y ffmpeg  \
     && apt-get clean
 
 RUN python3 -c "import torch"
