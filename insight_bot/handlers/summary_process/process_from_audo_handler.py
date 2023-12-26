@@ -57,7 +57,7 @@ async def processed_do_recognition(message: Message, bot: Bot,
     async def transcribe_and_save(media_recognition, chat_id, doc_repo, doc_id, duration):
         await progress_bar.start(chat_id=message.from_user.id, time=duration, process_name='распознавание аудио')
         file_on_disk = await get_media_file(data_from_income_message=message,
-                                            bot=bot, container_id='3570f2e9e963')
+                                            bot=bot, container_id='insighter-telegram_bot_server-1')
         recognized_text = await media_recognition.transcribe_file(file_on_disk)
         await doc_repo.save_new_transcribed_text(tg_id=chat_id, doc_id=doc_id, transcribed_text=recognized_text)
         if recognized_text:
