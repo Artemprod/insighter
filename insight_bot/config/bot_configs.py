@@ -49,7 +49,7 @@ class Config:
     ChatGPT: OpenAI_KEY
     data_base: MongoDB
     redis_storage: RedisStorage
-
+    telegram_server: TelegramServer
 
 
 def load_bot_config(path) -> Config:
@@ -60,7 +60,6 @@ def load_bot_config(path) -> Config:
     )
     telegram_server = TelegramServer(
         URI=env('DOCKER_TELEGRAM_SERVER'),
-
     )
     open_ai_key = OpenAI_KEY(
         key=env('OPENAI_API_KEY'))
