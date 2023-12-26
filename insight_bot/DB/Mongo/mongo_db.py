@@ -5,11 +5,11 @@ import os
 import random
 from mongoengine import connect
 from DB.Mongo.mongo_enteties import Assistant, User
-from config.bot_configs import MongoDB
+
 
 
 class MongoORMConnection:
-    def __init__(self, mongo: MongoDB):
+    def __init__(self, mongo):
         connect(db=mongo.bd_name,
                 host=mongo.docker_host,
                 port=int(mongo.local_port))
