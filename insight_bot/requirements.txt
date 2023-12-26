@@ -67,7 +67,7 @@ starlette
 sympy
 tenacity
 tiktoken
-torch==1.12.1
+torch==2.0.0
 tqdm
 typing-inspect
 typing_extensions
