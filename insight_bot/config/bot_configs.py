@@ -49,19 +49,18 @@ class Config:
     ChatGPT: OpenAI_KEY
     data_base: MongoDB
     redis_storage: RedisStorage
-    telegram_server: TelegramServer
+
 
 
 def load_bot_config(path) -> Config:
     env: Env = Env()
     env.read_env(path)
-    docker_container_id = get_container_id_by_service_name(service_name='telegram_bot_server')
     bot = TelegramBot(
         tg_bot_token=env('TELEGRAM_BOT_TOKEN')
     )
     telegram_server = TelegramServer(
         URI=env('DOCKER_TELEGRAM_SERVER'),
-        docker_container_id=docker_container_id
+
     )
     open_ai_key = OpenAI_KEY(
         key=env('OPENAI_API_KEY'))

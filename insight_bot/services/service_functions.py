@@ -111,16 +111,16 @@ async def copy_file_from_container(container_id, container_file_path, host_file_
         return None
 
 
-def get_container_id_by_service_name(service_name):
-    client = docker.from_env()
-    # Предполагается, что имя проекта - это имя каталога, где находится ваш docker-compose.yml
-    project_name = "insighter"
-    container_name_pattern = f"{project_name}_{service_name}_"
-
-    for container in client.containers.list():
-        if container_name_pattern in container.name:
-            return container.id
-    return None
+# def get_container_id_by_service_name(service_name):
+#     client = docker.from_env()
+#     # Предполагается, что имя проекта - это имя каталога, где находится ваш docker-compose.yml
+#     project_name = "insighter"
+#     container_name_pattern = f"{project_name}_{service_name}_"
+#
+#     for container in client.containers.list():
+#         if container_name_pattern in container.name:
+#             return container.id
+#     return None
 
 async def load_assistant(state: FSMContext,
                          Gpt_assistant: GPTAPIrequest,
