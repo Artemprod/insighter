@@ -114,7 +114,7 @@ async def copy_file_from_container(container_id, container_file_path, host_file_
 def get_container_id_by_service_name(service_name):
     client = docker.from_env()
     # Предполагается, что имя проекта - это имя каталога, где находится ваш docker-compose.yml
-    project_name = "имяпроекта"
+    project_name = "insighter"
     container_name_pattern = f"{project_name}_{service_name}_"
 
     for container in client.containers.list():
