@@ -39,7 +39,7 @@ class RedisStorage:
 @dataclass
 class TelegramServer:
     URI: str
-    docker_container_id:str
+
 
 
 
