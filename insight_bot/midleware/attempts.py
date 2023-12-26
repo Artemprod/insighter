@@ -3,8 +3,8 @@ from typing import Callable, Dict, Any, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.types import  TelegramObject
 
-from insight_bot.DB.Mongo.mongo_db import MongoUserRepoORM
-from insight_bot.keyboards.inline_keyboards import crete_inline_keyboard_payed
+from DB.Mongo.mongo_db import MongoUserRepoORM
+from keyboards.inline_keyboards import crete_inline_keyboard_payed
 
 
 class CheckAttemptsMiddleware(BaseMiddleware):
