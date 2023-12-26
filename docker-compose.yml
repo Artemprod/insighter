@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  telegram_bot_server:
+    image: telegram-bot-api
+    ports:
+      - "8081:8081"
+    restart: always
+
+  insighter_bot:
+    build: ./insight_bot
+    volumes:
+      - insighter_data:/botdata/insighter_data
+
+    depends_on:
+      - mongo_insight
+      - redis_insighter
+      - telegram_bot_server
+    restart: always
+
+  insighter_bot_admin:
+    build: ./admin_bot
+    volumes:
+      - insighter_data:/botdata/insighter_admin_data
+
+    depends_on:
+      - mongo_insight
+      - redis_admin
+    restart: always
+
+  progress_bar_server:
+    build: ./progress_bar
+    depends_on:
+      -   insighter_bot
+    ports:
+      - "9000:9000"
+    restart: always
+
+  mongo_insight:
+    image: mongo
+    ports:
+      - "7080:27017"
+    restart: always
+    volumes:
+      - mongodb:/DB/Mongo/data/db
+
+  redis_insighter:
+    image: redis
+    ports:
+      - "7083:7083"
+    restart: always
+    volumes:
+      - redis_insighter_volume:/DB/Redis/insighter/data/db
+    command: ["redis-server", "--port", "7083"]
+
+  redis_admin:
+    image: redis
+    ports:
+      - "7084:7084"
+    restart: always
+    volumes:
+      -   redis_admin_volume:/DB/Redis/admin/data/db
+    command: ["redis-server", "--port", "7084"]
+
+volumes:
+  mongodb:
+  redis_insighter_volume:
+  redis_admin_volume:
+  insighter_data:
