@@ -56,7 +56,6 @@ pydantic_core
 pydub
 pymongo
 python-dotenv
-pywin32
 PyYAML
 redis
 regex
