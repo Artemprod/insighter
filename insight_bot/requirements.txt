@@ -57,3 +57,4 @@ urllib3
 vosk
 websockets
 yarl
+langchain
