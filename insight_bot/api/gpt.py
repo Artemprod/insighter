@@ -2,7 +2,7 @@ import asyncio
 import openai
 
 from DB.Mongo.mongo_enteties import Assistant
-from insight_bot.lexicon.LEXICON_RU import  LEXICON_ASSISTANTS
+from lexicon.LEXICON_RU import LEXICON_ASSISTANTS
 
 import tiktoken
 from langchain.chains import MapReduceDocumentsChain, ReduceDocumentsChain
