@@ -17,7 +17,7 @@ services:
     build: ./insight_bot
     volumes:
       - insighter_data:/botdata/insighter_data
-
+      - shared_volume:/shared_data
     depends_on:
       - mongo_insight
       - redis_insighter
@@ -28,7 +28,7 @@ services:
     build: ./admin_bot
     volumes:
       - insighter_data:/botdata/insighter_admin_data
-
+      - shared_volume:/shared_data
     depends_on:
       - mongo_insight
       - redis_admin
@@ -37,7 +37,7 @@ services:
   progress_bar_server:
     build: ./progress_bar
     depends_on:
-      -   insighter_bot
+      - insighter_bot
     ports:
       - "9000:9000"
     restart: always
@@ -65,7 +65,7 @@ services:
       - "7084:7084"
     restart: always
     volumes:
-      -   redis_admin_volume:/DB/Redis/admin/data/db
+      - redis_admin_volume:/DB/Redis/admin/data/db
     command: ["redis-server", "--port", "7084"]
 
 volumes:
@@ -74,3 +74,4 @@ volumes:
   redis_admin_volume:
   insighter_data:
   telegram-bot-api-data:
+  shared_volume: # Объявление нового общего volume

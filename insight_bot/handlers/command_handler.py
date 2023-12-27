@@ -22,7 +22,7 @@ async def process_start_command(message: Message, assistant_repo: MongoAssistant
         )
     attempts = await user_repo.get_user_attempts(tg_id=message.from_user.id)
     assistant_keyboard = crete_inline_keyboard_assistants(assistant_repo, user_tg_id=message.from_user.id)
-    print()
+    print(assistant_keyboard)
     await message.answer(text=f"{LEXICON_RU['description']}\n\n <b>Осталось запросов: {attempts}</b> \n\n{LEXICON_RU['next']} ", reply_markup=assistant_keyboard)
 
 # @router.message(Command(commands=['help']))

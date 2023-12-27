@@ -13,6 +13,8 @@ import tarfile
 from DB.Mongo.mongo_db import MongoAssistantRepositoryORM
 from DB.Mongo.mongo_enteties import Assistant
 from api.gpt import GPTAPIrequest
+import os
+import shutil
 
 
 
@@ -56,7 +58,9 @@ async def get_media_file(data_from_income_message: Message, bot: Bot, container_
     file_on_disk = os.path.join(user_media_dir, f"{file_id}.mp3")
     print()
     # Сохраняем файл
-    file_name = await copy_file_from_container(container_id=container_id, container_file_path=file_path,
+    # file_name = await copy_file_from_container(container_id=container_id, container_file_path=file_path,
+    #                                            host_file_path=file_on_disk)
+    file_name = await copy_file_from_shared_volume(container_file_path=file_path,
                                                host_file_path=file_on_disk)
     print()
 
@@ -78,37 +82,56 @@ async def remove_file_async(file_path):
     await loop.run_in_executor(None, os.remove, file_path)
 
 
-async def copy_file_from_container(container_id, container_file_path, host_file_path):
-    client = docker.from_env()
+async def copy_file_from_shared_volume(container_file_path, host_file_path):
     try:
-        # Получение контейнера
-        container = client.containers.get(container_id)
+        # Проверка наличия файла в общем volume
+        if not os.path.exists(container_file_path):
+            raise FileNotFoundError(f"File {container_file_path} not found")
 
-        # Получение файла из контейнера
-        bits, _ = container.get_archive(container_file_path)
+        # Копирование файла
+        shutil.copy(container_file_path, host_file_path)
 
-        # Открытие tar-архива из потока битов
-        file_obj = io.BytesIO()
-        for chunk in bits:
-            file_obj.write(chunk)
-        file_obj.seek(0)
+        # Удаление файла из общего volume
+        os.remove(container_file_path)
 
-        extracted_file_name = None
-        with tarfile.open(fileobj=file_obj, mode='r') as tar:
-            # Извлечение файла из архива
-            for member in tar.getmembers():
-                if member.isfile():
-                    extracted_file_name = member.name
-                    tar.extract(member, path=os.path.dirname(host_file_path))
-
-        # Удаление файла из контейнера после его копирования
-        container.exec_run(f'rm {container_file_path}')
-
-        # Возвращаем имя извлеченного файла
-        return extracted_file_name
+        # Возвращаем имя скопированного файла
+        return os.path.basename(host_file_path)
     except Exception as e:
         print(f"Произошла ошибка: {e}")
         return None
+
+
+# async def copy_file_from_container(container_id, container_file_path, host_file_path):
+#     client = docker.from_env()
+#     try:
+#         # Получение контейнера
+#         container = client.containers.get(container_id)
+#
+#         # Получение файла из контейнера
+#         bits, _ = container.get_archive(container_file_path)
+#
+#         # Открытие tar-архива из потока битов
+#         file_obj = io.BytesIO()
+#         for chunk in bits:
+#             file_obj.write(chunk)
+#         file_obj.seek(0)
+#
+#         extracted_file_name = None
+#         with tarfile.open(fileobj=file_obj, mode='r') as tar:
+#             # Извлечение файла из архива
+#             for member in tar.getmembers():
+#                 if member.isfile():
+#                     extracted_file_name = member.name
+#                     tar.extract(member, path=os.path.dirname(host_file_path))
+#
+#         # Удаление файла из контейнера после его копирования
+#         container.exec_run(f'rm {container_file_path}')
+#
+#         # Возвращаем имя извлеченного файла
+#         return extracted_file_name
+#     except Exception as e:
+#         print(f"Произошла ошибка: {e}")
+#         return None
 
 
 # def get_container_id_by_service_name(service_name):
