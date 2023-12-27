@@ -3,7 +3,7 @@ import asyncio
 import os.path
 
 from aiogram import Bot, Dispatcher
-from aiogram.client.session import aiohttp
+
 from aiogram.client.telegram import TelegramAPIServer
 
 from api.gpt import GPTAPIrequest
@@ -25,12 +25,10 @@ async def main() -> None:
     root_dir = os.path.normpath(os.path.abspath(os.path.dirname(__file__)))
 
 
-    config = config_data  # Убедитесь, что config_data загружается правильно
-
-    # Используем aiohttp с отключенным SSL
-    connector = aiohttp.TCPConnector(ssl=False)
-    aiohttp_session = aiohttp.ClientSession(connector=connector)
-    session = AiohttpSession(api=TelegramAPIServer.from_base(config.telegram_server.URI), session=aiohttp_session)
+    config = config_data
+    session = AiohttpSession(
+        api=TelegramAPIServer.from_base(config.telegram_server.URI)
+    )
 
     redis = Redis(host=config.redis_storage.main_bot_docker_host,
                   port=config.redis_storage.main_bot_docker_port)
