@@ -29,10 +29,6 @@ httpx
 idna
 Jinja2
 jsonpatch
-jsonpointer
-langchain
-langchain-community
-langchain-core
 langsmith
 llvmlite
 magic-filter
@@ -47,8 +43,6 @@ mypy-extensions
 networkx
 numba
 numpy
-openai
-openai-whisper @ git+https://github.com/openai/whisper.git@fcfeaf1b61994c071bba62da47d7846933576ac9
 packaging
 pycparser
 pydantic
