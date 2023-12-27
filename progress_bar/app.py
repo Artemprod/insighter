@@ -24,7 +24,9 @@ async def start_progress_bar(request: StartRequest):
     chat_id = int(request.chat_id)
     time = int(request.time)  # Время работы прогресс-бара
     process_name = str(request.process_name)
-
+    print("прогресс бар", progress_bars)
+    print("время которое передается", time)
+    print("Процесс", process_name)
     if chat_id in progress_bars and progress_bars[chat_id].running:
         # Если прогресс-бар уже запущен, сначала останавливаем его
         await progress_bars[chat_id].abort()
@@ -33,6 +35,7 @@ async def start_progress_bar(request: StartRequest):
         # Создаем новый экземпляр ProgressBar или перезапускаем существующий
         progress_bars[chat_id] = ProgressBar(chat_id)
         await progress_bars[chat_id].start(process_name=process_name, time=time)
+        print("message Прогресс-бар запущен.")
         return {"message": "Прогресс-бар запущен."}
     else:
         # В случае каких-либо ошибок или несоответствий

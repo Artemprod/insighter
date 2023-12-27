@@ -25,25 +25,31 @@ class ProgressBar:
         self.running = False
 
     async def _progress_bar_task(self, process_name, time):
+        print('попал в таск прогрес бар процесс:', process_name)
         self.running = True
         total_seconds = time
         empty_bar_char = '▱'
         filled_bar_char = '▰'
         total_length = 18
         update_interval = 4  # Обновление каждые 4 секунды
-
+        print('Перед открыием сессии')
         async with aiohttp.ClientSession() as self._http_session:
+            print('Открытая сессия', self._http_session)
             for i in range(1, total_seconds + 1):
+                print('кол-во времени на проес бар', total_seconds + 1 )
                 if not self.running:
+                    print('после отрктия сесии но прерывание')
                     break
-
+                print('после отрктия сесии')
                 if i % update_interval == 0 or i == total_seconds:
+                    print("попал в цикл отправки прогресс бара ", i)
                     progress = (i / total_seconds) * 100
                     filled_length = int(total_length * progress / 100)
                     bar = filled_bar_char * filled_length + empty_bar_char * (total_length - filled_length)
                     progress_text = self.create_progress_text(process_name, time, bar, progress)
 
                     try:
+                        print('Тут по идеи должны быть отправка сообщения ')
                         await self.send_message(progress_text)
                     except TelegramRetryAfter as e:
                         print(f"Flood limit exceeded. Waiting for 10 seconds.")
@@ -63,6 +69,7 @@ class ProgressBar:
             await self.delete_message()
             self.progress_message_id = None
             self.running = False
+            print('прогресс бар остановился')
 
     def create_progress_text(self, process_name, time, bar, progress):
         return f"<b>Процесс:</b> <i>{process_name}</i>\n" \
@@ -74,13 +81,17 @@ class ProgressBar:
             return
         await self._ensure_bot_token()
         url = f"{self.__telegram_server_uri}/bot{self._bot_token}/sendMessage" if self.progress_message_id is None else f"{self.__telegram_server_uri}/bot{self._bot_token}/editMessageText"
-        print()
+        print(self.chat_id)
+        print(url)
         data = {"chat_id": self.chat_id, "text": text, "parse_mode": "HTML", "disable_notification": True}
         if self.progress_message_id:
             data["message_id"] = self.progress_message_id
+            print(data["message_id"])
 
         try:
+            print("функция send_message перед открытием сесии для отправки")
             async with self._http_session.post(url, data=data) as response:
+                print('сессия в функции открвлась вот она :', response)
                 if not self.progress_message_id and response.status == 200:
                     response_data = await response.json()
                     if response_data.get("ok"):
