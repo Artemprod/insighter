@@ -89,3 +89,5 @@ def crete_inline_keyboard_redact_actions(assistant_repo: MongoAssistantRepositor
 
     kp_builder.adjust(2)
     return kp_builder.as_markup()
+
+

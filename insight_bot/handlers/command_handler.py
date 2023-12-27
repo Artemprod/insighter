@@ -38,18 +38,18 @@ async def process_start_command(message: Message, assistant_repo: MongoAssistant
 #             text=LEXICON_RU.get('help', 'как дела ?'),
 #             reply_markup=crete_inline_keyboard_assistants(assistant_repo, user_tg_id=message.from_user.id))
 
-@router.message(Command(commands=['feedback']))
-async def process_start_command(message: Message, assistant_repo: MongoAssistantRepositoryORM,
-                                user_repo: MongoUserRepoORM):
-    if message.text:
-        await message.edit_text(
-            text=LEXICON_RU.get('help', 'как дела ?'),
-            reply_markup=crete_inline_keyboard_assistants(assistant_repo, user_tg_id=message.from_user.id))
-
-    else:
-        await message.answer(
-            text=LEXICON_RU.get('help', 'как дела ?'),
-            reply_markup=crete_inline_keyboard_assistants(assistant_repo, user_tg_id=message.from_user.id))
+# @router.message(Command(commands=['feedback']))
+# async def process_start_command(message: Message, assistant_repo: MongoAssistantRepositoryORM,
+#                                 user_repo: MongoUserRepoORM):
+#     if message.text:
+#         await message.edit_text(
+#             text=LEXICON_RU.get('help', 'как дела ?'),
+#             reply_markup=crete_inline_keyboard_assistants(assistant_repo, user_tg_id=message.from_user.id))
+#
+#     else:
+#         await message.answer(
+#             text=LEXICON_RU.get('help', 'как дела ?'),
+#             reply_markup=crete_inline_keyboard_assistants(assistant_repo, user_tg_id=message.from_user.id))
 
 @router.callback_query(F.data == "payed")
 async def process_payed(callback: CallbackQuery, assistant_repo: MongoAssistantRepositoryORM,
