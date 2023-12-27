@@ -3,17 +3,17 @@ import asyncio
 import os.path
 
 from aiogram import Bot, Dispatcher
-from aiogram.client.telegram import TelegramAPIServer, PRODUCTION
+
 
 from api.gpt import GPTAPIrequest
-from api.media_recognition.recognition import WhisperRecognition, VoskRecognition, WhisperRecognitionAPI
+from api.media_recognition.recognition import  WhisperRecognitionAPI
 
 from handlers import command_handler, docs_handlers
 from handlers.summary_process import process_from_audo_handler, process_from_text
 from insiht_bot_container import assistant_repo, config_data, user_repo, doc_repo, progress_bar
 from keyboards.main_menu import set_main_menu
 from aiogram.fsm.storage.redis import RedisStorage, Redis
-from aiogram.client.session.aiohttp import AiohttpSession
+
 
 from midleware.attempts import CheckAttemptsMiddleware
 
@@ -28,13 +28,13 @@ async def main() -> None:
                   port=config.redis_storage.main_bot_docker_port)
     storage: RedisStorage = RedisStorage(redis=redis)
 
-    session = AiohttpSession(
-        api=TelegramAPIServer.from_base(config.telegram_server.URI)
-    )
+    # session = AiohttpSession(
+    #     api=TelegramAPIServer.from_base(config.telegram_server.URI)
+    # )
     assistant = GPTAPIrequest(api_key=config.ChatGPT.key )
-    bot: Bot = Bot(token=config.Bot.tg_bot_token, parse_mode='HTML', session=session)
+    bot: Bot = Bot(token=config.Bot.tg_bot_token, parse_mode='HTML', )
     wisper_model = WhisperRecognitionAPI()
-    # vosk_model = VoskRecognition()
+
 
     # Добовляем хэгдлеры в диспечтер через роутеры
     dp: Dispatcher = Dispatcher(storage=storage,media_recognition=wisper_model, root_dir=root_dir,
