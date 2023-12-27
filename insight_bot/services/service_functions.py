@@ -111,6 +111,11 @@ async def get_media_file(data_from_income_message: Message, bot: Bot) -> str | N
 
     file = await bot.get_file(file_id)
     shared_file_path = os.path.join('/shared_data', os.path.basename(file.file_path))
+    print('shared_file_path', shared_file_path)
+    print('file', file)
+    print('file.file_path', file.file_path)
+    print('os.path.basename(file.file_path)', os.path.basename(file.file_path))
+
 
     if os.path.exists(shared_file_path):
         print(f"Файл найден в общем томе: {shared_file_path}")
