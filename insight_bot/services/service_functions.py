@@ -110,7 +110,7 @@ async def get_media_file(data_from_income_message: Message, bot: Bot) -> str | N
     print(f"file_id: {file_id}")
 
     file = await bot.get_file(file_id)
-    shared_file_path = os.path.join('/var/lib/telegram-bot-api', os.path.basename(file.file_path))
+    shared_file_path = os.path.join('/var/lib/telegram-bot-api',bot.token,'music', os.path.basename(file.file_path))
     print('shared_file_path', shared_file_path)
     print('file', file)
     print('file.file_path', file.file_path)
