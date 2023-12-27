@@ -3,7 +3,8 @@ import asyncio
 import os.path
 
 from aiogram import Bot, Dispatcher
-
+from aiogram.client.session import aiohttp
+from aiogram.client.telegram import TelegramAPIServer
 
 from api.gpt import GPTAPIrequest
 from api.media_recognition.recognition import  WhisperRecognitionAPI
@@ -13,7 +14,7 @@ from handlers.summary_process import process_from_audo_handler, process_from_tex
 from insiht_bot_container import assistant_repo, config_data, user_repo, doc_repo, progress_bar
 from keyboards.main_menu import set_main_menu
 from aiogram.fsm.storage.redis import RedisStorage, Redis
-
+from aiogram.client.session.aiohttp import AiohttpSession
 
 from midleware.attempts import CheckAttemptsMiddleware
 
@@ -22,19 +23,24 @@ async def main() -> None:
     t = torch
 
     root_dir = os.path.normpath(os.path.abspath(os.path.dirname(__file__)))
-    config = config_data
+
+
+    config = config_data  # Убедитесь, что config_data загружается правильно
+
+    # Используем aiohttp с отключенным SSL
+    connector = aiohttp.TCPConnector(ssl=False)
+    aiohttp_session = aiohttp.ClientSession(connector=connector)
+    session = AiohttpSession(api=TelegramAPIServer.from_base(config.telegram_server.URI), session=aiohttp_session)
 
     redis = Redis(host=config.redis_storage.main_bot_docker_host,
                   port=config.redis_storage.main_bot_docker_port)
     storage: RedisStorage = RedisStorage(redis=redis)
 
-    # session = AiohttpSession(
-    #     api=TelegramAPIServer.from_base(config.telegram_server.URI)
-    # )
-    assistant = GPTAPIrequest(api_key=config.ChatGPT.key )
-    bot: Bot = Bot(token=config.Bot.tg_bot_token, parse_mode='HTML', )
-    wisper_model = WhisperRecognitionAPI()
 
+    assistant = GPTAPIrequest(api_key=config.ChatGPT.key )
+    bot: Bot = Bot(token=config.Bot.tg_bot_token, parse_mode='HTML',session=session )
+    wisper_model = WhisperRecognitionAPI()
+    # vosk_model = VoskRecognition()
 
     # Добовляем хэгдлеры в диспечтер через роутеры
     dp: Dispatcher = Dispatcher(storage=storage,media_recognition=wisper_model, root_dir=root_dir,
