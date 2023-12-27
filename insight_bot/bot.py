@@ -30,9 +30,9 @@ async def main() -> None:
         api=TelegramAPIServer.from_base(config.telegram_server.URI)
     )
 
-    redis = Redis(host=config.redis_storage.main_bot_docker_host,
-                  port=config.redis_storage.main_bot_docker_port)
-    storage: RedisStorage = RedisStorage(redis=redis)
+    # redis = Redis(host=config.redis_storage.main_bot_docker_host,
+    #               port=config.redis_storage.main_bot_docker_port)
+    # storage: RedisStorage = RedisStorage(redis=redis)
 
 
     assistant = GPTAPIrequest(api_key=config.ChatGPT.key )
@@ -41,7 +41,7 @@ async def main() -> None:
     # vosk_model = VoskRecognition()
 
     # Добовляем хэгдлеры в диспечтер через роутеры
-    dp: Dispatcher = Dispatcher(storage=storage,media_recognition=wisper_model, root_dir=root_dir,
+    dp: Dispatcher = Dispatcher(media_recognition=wisper_model, root_dir=root_dir,
                                 assistant_repo=assistant_repo, user_repo=user_repo,
                                 doc_repo=doc_repo, assistant=assistant,
                                 progress_bar=progress_bar)
