@@ -81,39 +81,51 @@ async def download_media_file(bot: Bot, file_path: str, destination: str) -> str
 async def remove_file_async(file_path):
     loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, os.remove, file_path)
+
 async def ensure_directory_exists(path):
+    print(f"Проверка наличия каталога: {path}")
     if not os.path.exists(path):
+        print(f"Каталог не найден. Создание каталога: {path}")
         os.makedirs(path, exist_ok=True)
+    else:
+        print(f"Каталог уже существует: {path}")
 
 async def get_media_file(data_from_income_message: Message, bot: Bot) -> str | None:
     file_id = None
+    print("Определение типа контента сообщения...")
     if data_from_income_message.content_type == ContentType.VOICE:
         file_id = data_from_income_message.voice.file_id
     elif data_from_income_message.content_type == ContentType.AUDIO:
         file_id = data_from_income_message.audio.file_id
-
     elif data_from_income_message.content_type == ContentType.DOCUMENT:
         file_id = data_from_income_message.document.file_id
-        file = await bot.get_file(file_id)
-        file_path = file.file_path
-        return file_path
+
+    print(f"file_id: {file_id}")
     if file_id is None:
+        print("Формат файла не поддерживается.")
         await data_from_income_message.reply("Формат файла не поддерживается.")
         return None
 
+    print("Получение объекта файла из Telegram...")
     file = await bot.get_file(file_id)
-    file_path = file.file_path  # Это путь к файлу в контексте Telegram API
+    file_path = file.file_path
+    print(f"Путь к файлу в Telegram API: {file_path}")
 
     # Путь к файлу в общем томе shared_volume
     shared_file_path = os.path.join('/shared_data', os.path.basename(file_path))
+    print(f"Путь к файлу в общем томе: {shared_file_path}")
 
     # Путь для локального сохранения файла в контейнере
     local_media_dir = '/media/user_media_files'
+    print(f"Убеждаемся, что локальный каталог для медиа файлов существует: {local_media_dir}")
     await ensure_directory_exists(local_media_dir)
     local_file_path = os.path.join(local_media_dir, os.path.basename(file_path))
+    print(f"Локальный путь к файлу для сохранения: {local_file_path}")
 
     # Проверяем существование файла в общем volume и копируем если есть
+    print(f"Проверка наличия файла в общем томе: {shared_file_path}")
     if os.path.exists(shared_file_path):
+        print("Файл найден. Начинаем копирование...")
         # Потоковое копирование файла
         async with aiofiles.open(shared_file_path, 'rb') as src, aiofiles.open(local_file_path, 'wb') as dst:
             while True:
@@ -121,10 +133,14 @@ async def get_media_file(data_from_income_message: Message, bot: Bot) -> str | N
                 if not data:
                     break
                 await dst.write(data)
+        print(f"Файл скопирован в {local_file_path}")
+        print(f"Удаление файла из общего тома: {shared_file_path}")
         os.remove(shared_file_path)
+        print(f"Удаление исходного файла: {file_path}")
         os.remove(file_path)
         return local_file_path
     else:
+        print("Файл в общем томе не найден.")
         await data_from_income_message.reply("Файл не найден в общем томе.")
         return None
 
@@ -254,7 +270,7 @@ if __name__ == '__main__':
     container_file_path = "/var/lib/telegram-bot-api/6970555880:AAFrBj3go_TXClpcQzDOs50DwHCFAUD6QlM/music/file_3.mp3"
     host_file_path = r"C:\Users\artem\OneDrive\Рабочий стол\text\file_3.mp3"
 
-    if copy_file_from_container(container_id, container_file_path, host_file_path):
-        print("Файл успешно скопирован.")
-    else:
-        print("Ошибка копирования файла.")
+    # if copy_file_from_container(container_id, container_file_path, host_file_path):
+    #     print("Файл успешно скопирован.")
+    # else:
+    #     print("Ошибка копирования файла.")
