@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from typing import Callable
 
+import aiofiles
 import docker as docker
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ContentType, FSInputFile, Audio
@@ -33,7 +34,58 @@ def get_relative_path(path):
     return "/".join(parts[len(parts) - 1:])
 
 
-async def get_media_file(data_from_income_message: Message, bot: Bot, container_id:str) -> str | None:
+# async def get_media_file(data_from_income_message: Message, bot: Bot, container_id:str) -> str | None:
+#     file_id = None
+#     if data_from_income_message.content_type == ContentType.VOICE:
+#         file_id = data_from_income_message.voice.file_id
+#     elif data_from_income_message.content_type == ContentType.AUDIO:
+#         file_id = data_from_income_message.audio.file_id
+#
+#     elif data_from_income_message.content_type == ContentType.DOCUMENT:
+#         file_id = data_from_income_message.document.file_id
+#         file = await bot.get_file(file_id)
+#         file_path = file.file_path
+#         return file_path
+#     if file_id is None:
+#         await data_from_income_message.reply("Формат файла не поддерживается.")
+#         return None
+#
+#     file = await bot.get_file(file_id)
+#     file_path = file.file_path
+#
+#     user_media_dir = os.path.join('media', 'user_media_files')
+#     os.makedirs(user_media_dir, exist_ok=True)
+#     # Путь куда будет сохранен файл на локальном диске
+#     file_on_disk = os.path.join(user_media_dir, f"{file_id}.mp3")
+#     print()
+#     # Сохраняем файл
+#     # file_name = await copy_file_from_container(container_id=container_id, container_file_path=file_path,
+#     #                                            host_file_path=file_on_disk)
+#     file_name = await copy_file_from_shared_volume(container_file_path=file_path,
+#                                                host_file_path=file_on_disk)
+#     print()
+#
+#     return os.path.normpath(os.path.join(user_media_dir, f"{file_name}"))
+
+
+async def get_media_file_path(user_media_dir: str, file_id: str, file_extension: str) -> str:
+    os.makedirs(user_media_dir, exist_ok=True)
+    return os.path.join(user_media_dir, f"{file_id}.{file_extension}")
+
+
+async def download_media_file(bot: Bot, file_path: str, destination: str) -> str:
+    await bot.download_file(file_path, destination=destination)
+    return destination
+
+
+async def remove_file_async(file_path):
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, os.remove, file_path)
+async def ensure_directory_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path, exist_ok=True)
+
+async def get_media_file(data_from_income_message: Message, bot: Bot) -> str | None:
     file_id = None
     if data_from_income_message.content_type == ContentType.VOICE:
         file_id = data_from_income_message.voice.file_id
@@ -50,55 +102,49 @@ async def get_media_file(data_from_income_message: Message, bot: Bot, container_
         return None
 
     file = await bot.get_file(file_id)
-    file_path = file.file_path
+    file_path = file.file_path  # Это путь к файлу в контексте Telegram API
 
-    user_media_dir = os.path.join('media', 'user_media_files')
-    os.makedirs(user_media_dir, exist_ok=True)
-    # Путь куда будет сохранен файл на локальном диске
-    file_on_disk = os.path.join(user_media_dir, f"{file_id}.mp3")
-    print()
-    # Сохраняем файл
-    # file_name = await copy_file_from_container(container_id=container_id, container_file_path=file_path,
-    #                                            host_file_path=file_on_disk)
-    file_name = await copy_file_from_shared_volume(container_file_path=file_path,
-                                               host_file_path=file_on_disk)
-    print()
+    # Путь к файлу в общем томе shared_volume
+    shared_file_path = os.path.join('/shared_data', os.path.basename(file_path))
 
-    return os.path.normpath(os.path.join(user_media_dir, f"{file_name}"))
+    # Путь для локального сохранения файла в контейнере
+    local_media_dir = '/media/user_media_files'
+    await ensure_directory_exists(local_media_dir)
+    local_file_path = os.path.join(local_media_dir, os.path.basename(file_path))
 
-
-async def get_media_file_path(user_media_dir: str, file_id: str, file_extension: str) -> str:
-    os.makedirs(user_media_dir, exist_ok=True)
-    return os.path.join(user_media_dir, f"{file_id}.{file_extension}")
-
-
-async def download_media_file(bot: Bot, file_path: str, destination: str) -> str:
-    await bot.download_file(file_path, destination=destination)
-    return destination
-
-
-async def remove_file_async(file_path):
-    loop = asyncio.get_running_loop()
-    await loop.run_in_executor(None, os.remove, file_path)
-
-
-async def copy_file_from_shared_volume(container_file_path, host_file_path):
-    try:
-        # Проверка наличия файла в общем volume
-        if not os.path.exists(container_file_path):
-            raise FileNotFoundError(f"File {container_file_path} not found")
-
-        # Копирование файла
-        shutil.copy(container_file_path, host_file_path)
-
-        # Удаление файла из общего volume
-        os.remove(container_file_path)
-
-        # Возвращаем имя скопированного файла
-        return os.path.basename(host_file_path)
-    except Exception as e:
-        print(f"Произошла ошибка: {e}")
+    # Проверяем существование файла в общем volume и копируем если есть
+    if os.path.exists(shared_file_path):
+        # Потоковое копирование файла
+        async with aiofiles.open(shared_file_path, 'rb') as src, aiofiles.open(local_file_path, 'wb') as dst:
+            while True:
+                data = await src.read(64 * 1024)  # Читаем кусками по 64КБ
+                if not data:
+                    break
+                await dst.write(data)
+        os.remove(shared_file_path)
+        os.remove(file_path)
+        return local_file_path
+    else:
+        await data_from_income_message.reply("Файл не найден в общем томе.")
         return None
+
+# async def copy_file_from_shared_volume(container_file_path, host_file_path):
+#     try:
+#         # Проверка наличия файла в общем volume
+#         if not os.path.exists(container_file_path):
+#             raise FileNotFoundError(f"File {container_file_path} not found")
+#
+#         # Копирование файла
+#         shutil.copy(container_file_path, host_file_path)
+#
+#         # Удаление файла из общего volume
+#         os.remove(container_file_path)
+#
+#         # Возвращаем имя скопированного файла
+#         return os.path.basename(host_file_path)
+#     except Exception as e:
+#         print(f"Произошла ошибка: {e}")
+#         return None
 
 
 # async def copy_file_from_container(container_id, container_file_path, host_file_path):

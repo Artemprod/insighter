@@ -7,6 +7,7 @@ services:
       - "8081:8081"
     volumes:
       - telegram-bot-api-data:/var/lib/telegram-bot-api
+      - shared_volume:/shared_data
     environment:
       - TELEGRAM_API_ID=23823287
       - TELEGRAM_API_HASH=fe561473a06737cb358db923e05e7868

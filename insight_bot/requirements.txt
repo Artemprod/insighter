@@ -77,3 +77,4 @@ vosk
 websockets
 yarl
 triton
+aiofiles
