@@ -82,17 +82,21 @@ async def remove_file_async(file_path):
     loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, os.remove, file_path)
 
-async def ensure_directory_exists(path):
-    print(f"Проверка наличия каталога: {path}")
+def ensure_directory_exists(path):
+    """
+    Ensure that a directory exists, and create it if it doesn't.
+    """
     if not os.path.exists(path):
-        print(f"Каталог не найден. Создание каталога: {path}")
         os.makedirs(path, exist_ok=True)
+        print(f"Каталог создан: {path}")
     else:
         print(f"Каталог уже существует: {path}")
 
 async def get_media_file(data_from_income_message: Message, bot: Bot) -> str | None:
+    """
+    Get a file from a Telegram message and confirm its presence in the shared volume.
+    """
     file_id = None
-    print("Определение типа контента сообщения...")
     if data_from_income_message.content_type == ContentType.VOICE:
         file_id = data_from_income_message.voice.file_id
     elif data_from_income_message.content_type == ContentType.AUDIO:
@@ -100,50 +104,114 @@ async def get_media_file(data_from_income_message: Message, bot: Bot) -> str | N
     elif data_from_income_message.content_type == ContentType.DOCUMENT:
         file_id = data_from_income_message.document.file_id
 
-    print(f"file_id: {file_id}")
     if file_id is None:
-        print("Формат файла не поддерживается.")
         await data_from_income_message.reply("Формат файла не поддерживается.")
         return None
+    print(f"file_id: {file_id}")
 
-    print("Получение объекта файла из Telegram...")
     file = await bot.get_file(file_id)
-    file_path = file.file_path
-    print(f"Путь к файлу в Telegram API: {file_path}")
+    shared_file_path = os.path.join('/shared_data', os.path.basename(file.file_path))
 
-    # Путь к файлу в общем томе shared_volume
-    shared_file_path = os.path.join('/shared_data', os.path.basename(file_path))
-    print(f"Путь к файлу в общем томе: {shared_file_path}")
-
-    # Путь для локального сохранения файла в контейнере
-    local_media_dir = '/media/user_media_files'
-    print(f"Убеждаемся, что локальный каталог для медиа файлов существует: {local_media_dir}")
-    await ensure_directory_exists(local_media_dir)
-    local_file_path = os.path.join(local_media_dir, os.path.basename(file_path))
-    print(f"Локальный путь к файлу для сохранения: {local_file_path}")
-
-    # Проверяем существование файла в общем volume и копируем если есть
-    print(f"Проверка наличия файла в общем томе: {shared_file_path}")
     if os.path.exists(shared_file_path):
-        print("Файл найден. Начинаем копирование...")
-        # Потоковое копирование файла
-        async with aiofiles.open(shared_file_path, 'rb') as src, aiofiles.open(local_file_path, 'wb') as dst:
-            while True:
-                data = await src.read(64 * 1024)  # Читаем кусками по 64КБ
-                if not data:
-                    break
-                await dst.write(data)
-        print(f"Файл скопирован в {local_file_path}")
-        print(f"Удаление файла из общего тома: {shared_file_path}")
-        os.remove(shared_file_path)
-        print(f"Удаление исходного файла: {file_path}")
-        os.remove(file_path)
-        return local_file_path
+        print(f"Файл найден в общем томе: {shared_file_path}")
+        return shared_file_path
     else:
-        print("Файл в общем томе не найден.")
-        await data_from_income_message.reply("Файл не найден в общем томе.")
+        print(f"Файл в общем томе {shared_file_path} не найден.")
         return None
 
+
+
+
+
+
+# def move_file_to_shared_volume(source_path, shared_volume_path):
+#     """
+#     Копирует файл из локального пути в общий том и удаляет исходный файл.
+#     :param source_path: Путь к файлу в локальной файловой системе контейнера.
+#     :param shared_volume_path: Путь в общем томе, где файл будет доступен другим контейнерам.
+#     """
+#     # Создание целевой директории, если она еще не существует
+#     shared_volume_dir = os.path.dirname(shared_volume_path)
+#     if not os.path.exists(shared_volume_dir):
+#         os.makedirs(shared_volume_dir, exist_ok=True)
+#
+#     # Копирование файла в общий том
+#     shutil.copy2(source_path, shared_volume_path)
+#     print(f"Файл {source_path} успешно скопирован в общий том {shared_volume_path}")
+#
+#     # Удаление исходного файла
+#     os.remove(source_path)
+#     print(f"Исходный файл {source_path} удален")
+# def ensure_directory_exists(path):
+#     print(f"Проверка наличия каталога: {path}")
+#     if not os.path.exists(path):
+#         print(f"Каталог не найден. Создание каталога: {path}")
+#         os.makedirs(path, exist_ok=True)
+#     else:
+#         print(f"Каталог уже существует: {path}")
+#
+# async def get_media_file(data_from_income_message: Message, bot: Bot) -> str | None:
+#     file_id = None
+#     if data_from_income_message.content_type == ContentType.VOICE:
+#         file_id = data_from_income_message.voice.file_id
+#     elif data_from_income_message.content_type == ContentType.AUDIO:
+#         file_id = data_from_income_message.audio.file_id
+#
+#     elif data_from_income_message.content_type == ContentType.DOCUMENT:
+#         file_id = data_from_income_message.document.file_id
+#         file = await bot.get_file(file_id)
+#         file_path = file.file_path
+#         return file_path
+#     if file_id is None:
+#         await data_from_income_message.reply("Формат файла не поддерживается.")
+#         return None
+#     print(f"file_id: {file_id}")
+#
+#     # Получаем информацию о файле от Telegram
+#     file = await bot.get_file(file_id)
+#     source_file_path = file.file_path
+#     print(f"Путь к файлу в Telegram API: {source_file_path}")
+#
+#     # Путь для общего тома shared_volume
+#     shared_file_path = os.path.join('/shared_data', os.path.basename(source_file_path))
+#     print(f"Целевой путь в общем томе: {shared_file_path}")
+#
+#     # Путь для локального сохранения файла в контейнере
+#     local_media_dir = '/media/user_media_files'
+#     print(f"Проверка локального каталога для медиа файлов: {local_media_dir}")
+#     ensure_directory_exists(local_media_dir)
+#     local_file_path = os.path.join(local_media_dir, os.path.basename(source_file_path))
+#     print(f"Локальный путь для сохранения файла: {local_file_path}")
+#
+#     # Используем синхронное копирование для перемещения файла из source_file_path в shared_file_path
+#     if os.path.exists(source_file_path):
+#         print(f"Копирование файла из {source_file_path} в {shared_file_path}...")
+#         shutil.copy2(source_file_path, shared_file_path)
+#         print(f"Файл успешно скопирован в общий том.")
+#
+#         print(f"Удаление оригинального файла: {source_file_path}")
+#         os.remove(source_file_path)
+#         print("Оригинальный файл удален.")
+#     else:
+#         print(f"Файл в {source_file_path} не найден, не удалось скопировать.")
+#         return None
+
+
+
+    # Следующий блок кода должен быть уже в контексте контейнера insighter_bot
+    # Используем синхронное копирование для перемещения файла из shared_file_path в local_file_path
+    # if os.path.exists(shared_file_path):
+    #     print(f"Копирование файла из {shared_file_path} в {local_file_path}...")
+    #     shutil.copy2(shared_file_path, local_file_path)
+    #     print(f"Файл успешно скопирован в {local_file_path}")
+    #
+    #     print(f"Удаление файла из общего тома: {shared_file_path}")
+    #     os.remove(shared_file_path)
+    #     print("Файл удален из общего тома.")
+    #     return local_file_path
+    # else:
+    #     print(f"Файл в общем томе {shared_file_path} не найден, не удалось скопировать.")
+    #     return None
 # async def copy_file_from_shared_volume(container_file_path, host_file_path):
 #     try:
 #         # Проверка наличия файла в общем volume

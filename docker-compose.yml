@@ -6,7 +6,6 @@ services:
     ports:
       - "8081:8081"
     volumes:
-      - telegram-bot-api-data:/var/lib/telegram-bot-api
       - shared_volume:/shared_data
     environment:
       - TELEGRAM_API_ID=23823287
@@ -17,8 +16,8 @@ services:
   insighter_bot:
     build: ./insight_bot
     volumes:
-      - insighter_data:/botdata/insighter_data
-      - shared_volume:/shared_data
+     - shared_volume:/shared_data
+
     depends_on:
       - mongo_insight
       - redis_insighter
