@@ -32,7 +32,6 @@ async def main() -> None:
         api=TelegramAPIServer.from_base(config.telegram_server.URI)
     )
     assistant = GPTAPIrequest(api_key=config.ChatGPT.key )
-    server_container_id = config.telegram_server.docker_container_id
     bot: Bot = Bot(token=config.Bot.tg_bot_token, parse_mode='HTML', session=session)
     wisper_model = WhisperRecognitionAPI()
     # vosk_model = VoskRecognition()
@@ -41,7 +40,7 @@ async def main() -> None:
     dp: Dispatcher = Dispatcher(storage=storage,media_recognition=wisper_model, root_dir=root_dir,
                                 assistant_repo=assistant_repo, user_repo=user_repo,
                                 doc_repo=doc_repo, assistant=assistant,
-                                progress_bar=progress_bar, server_container_id=server_container_id)
+                                progress_bar=progress_bar)
 
     dp.include_router(command_handler.router)
     dp.include_router(process_from_audo_handler.router)

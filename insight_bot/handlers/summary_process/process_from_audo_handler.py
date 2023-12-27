@@ -53,7 +53,7 @@ async def processed_do_recognition(message: Message, bot: Bot,
 
                                    state: FSMContext, assistant_repo: MongoAssistantRepositoryORM,
                                    user_repo: MongoUserRepoORM, doc_repo: UserDocsRepoORM,
-                                   assistant: GPTAPIrequest, progress_bar: ProgressBarClient, server_container_id:str):
+                                   assistant: GPTAPIrequest, progress_bar: ProgressBarClient,):
     async def transcribe_and_save(media_recognition, chat_id, doc_repo, doc_id, duration):
         await progress_bar.start(chat_id=message.from_user.id, time=duration, process_name='распознавание аудио')
         file_on_disk = await get_media_file(data_from_income_message=message,
