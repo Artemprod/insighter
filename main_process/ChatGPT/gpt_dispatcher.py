@@ -20,14 +20,14 @@ from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 
-from costume_excepyions.ai_exceptions import (
-    CharactersInTokenMeasurement,
+from costume_exceptions.ai_exceptions import (
+    CharactersInTokenMeasurementError,
     CompileRequestError,
     GeneratingDataForModelError,
     GptApiRequestError,
     LoadingLongRequestMethodError,
     LoadingShortRequestMethodError,
-    TokenCapacityMeasurement,
+    TokenCapacityMeasurementError,
 )
 from DB.Mongo.mongo_db import MongoAssistantRepositoryORM
 from DB.Mongo.mongo_enteties import Assistant
@@ -74,7 +74,7 @@ class TextTokenizer:
             tokens_per_name = 1
         elif model == "gpt-3.5-turbo-0301":
             tokens_per_message = (
-                TextTokenizer.TOKENS_PER_MESSAGE_RU + 1
+                    TextTokenizer.TOKENS_PER_MESSAGE_RU + 1
             )  # every message follows <|start|>{role/name}\n{content}<|end|>\n
             tokens_per_name = -1  # if there's a name, the role is omitted
         elif "gpt-3.5-turbo" in model:
@@ -87,7 +87,9 @@ class TextTokenizer:
             return self.num_tokens_from_messages(messages, model="gpt-4-0613")
         else:
             raise NotImplementedError(
-                f"""num_tokens_from_messages() is not implemented for model {model}. See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens."""
+                f"""num_tokens_from_messages() is not implemented for model {model}. 
+                See https://github.com/openai/openai-python/blob/main/chatml.md for 
+                information on how messages are converted to tokens."""
             )
         num_tokens = 0
         for message in messages:
@@ -103,7 +105,7 @@ class TextTokenizer:
     def split_text_into_parts(string, max_tokens):
         encoding = tiktoken.get_encoding("cl100k_base")
         tokens = encoding.encode(string)
-        token_parts = [tokens[i : i + max_tokens] for i in range(0, len(tokens), max_tokens)]
+        token_parts = [tokens[i: i + max_tokens] for i in range(0, len(tokens), max_tokens)]
         parts = [encoding.decode(i) for i in token_parts]
         return parts
 
@@ -122,7 +124,8 @@ class TextTokenizer:
                 return text_size
             except Exception as e:
                 insighter_logger.exception("cant measure token capacity")
-                raise TokenCapacityMeasurement(f"cant measure amount of token.\n An error {e} have came around")
+                raise TokenCapacityMeasurementError(f"cant measure amount of token.\n "
+                                                    f"An error {e} have came around") from e
 
     async def measure_characters_in_tokens(self, tokens_count: int) -> int:
         """
@@ -140,18 +143,20 @@ class TextTokenizer:
                 return characters
             except Exception as e:
                 insighter_logger.exception("cant measure characters ")
-                raise CharactersInTokenMeasurement(
+                raise CharactersInTokenMeasurementError(
                     f"cant measure amount of characters in tokens .\n An error {e} have came around"
-                )
+                ) from e
 
     # TODO сделать динамическую подгрузку среднего кол-во символов в токене чстобы бы редактировать
     @staticmethod
     def tokens_to_characters_gpt4_russian(tokens_count: int, average_chars_per_token: float = 2) -> int:
         """
-        Приблизительно переводит количество токенов в количество символов для русскоязычного текста в модели GPT-4.
+        Приблизительно переводит количество токенов в количество символов для русскоязычного
+        текста в модели GPT-4.
 
         :param tokens_count: Количество токенов.
-        :param average_chars_per_token: Среднее количество символов на один токен. Для GPT-4 и русского языка предполагаем среднее значение около 3.5.
+        :param average_chars_per_token: Среднее количество символов на один токен.
+        Для GPT-4 и русского языка предполагаем среднее значение около 3.5.
         :return: Ориентировочное количество символов.
         """
         # Расчет количества символов, основанный на среднем значении символов на токен, умножаем количество токенов на среднее количество символов
@@ -162,19 +167,19 @@ class TextTokenizer:
 # TODO вынести в отдельный модуль потому что тут только диспечер
 class RequestGPTWorker:
     def __init__(
-        self,
-        assistant_repositorysitory: MongoAssistantRepositoryORM,
-        model_manager: GPTModelManager,
+            self,
+            assistant_repositorysitory: MongoAssistantRepositoryORM,
+            model_manager: GPTModelManager,
     ):
         self.__assistant_repositorysitory = assistant_repositorysitory
         self.model_manager = model_manager
 
     async def make_gpt_request(
-        self,
-        assistant_id,
-        income_text: str,
-        additional_system_information: str,
-        additional_user_information: str,
+            self,
+            assistant_id,
+            income_text: str,
+            additional_system_information: str,
+            additional_user_information: str,
     ) -> str:
         raise NotImplementedError("Gpt request method not implemented")
 
@@ -225,11 +230,11 @@ class RequestGPTWorker:
         return options
 
     async def generate_data(
-        self,
-        assistant_id,
-        income_text,
-        additional_system_information,
-        additional_user_information,
+            self,
+            assistant_id,
+            income_text,
+            additional_system_information,
+            additional_user_information,
     ):
         # Выполняем асинхронные задачи параллельно и ждем их результатов
 
@@ -255,10 +260,10 @@ class RequestGPTWorker:
         return message
 
     async def create_one_user_message(
-        self,
-        user_prompt: str,
-        income_text: str,
-        additional_user_information: str,
+            self,
+            user_prompt: str,
+            income_text: str,
+            additional_user_information: str,
     ) -> GPTMessage:
         prompt = await self.insert_additional_information_if_exists(
             prompt=user_prompt, information=additional_user_information
@@ -279,11 +284,11 @@ class RequestGPTWorker:
 
 class OneRequestGPTWorker(RequestGPTWorker):
     async def make_gpt_request(
-        self,
-        assistant_id,
-        income_text: str,
-        additional_system_information: str = None,
-        additional_user_information: str = None,
+            self,
+            assistant_id,
+            income_text: str,
+            additional_system_information: str = None,
+            additional_user_information: str = None,
     ) -> str:
         try:
             system_massage, user_message = await self.generate_data(
@@ -294,7 +299,7 @@ class OneRequestGPTWorker(RequestGPTWorker):
             )
         except Exception as e:
             insighter_logger.exception("Failed to generate datda for for model")
-            raise GeneratingDataForModelError("Failed to generate datda for for model", exception=e)
+            raise GeneratingDataForModelError("Failed to generate datda for for model", exception=e) from e
 
         gpt_client: GPTClient = await self.load_gpt()
         try:
@@ -310,16 +315,16 @@ class OneRequestGPTWorker(RequestGPTWorker):
             raise GptApiRequestError(
                 f"Somthing went wrong with gpt api request. Error {e}",
                 exception=e,
-            )
+            ) from e
 
 
 # noinspection PyCompatibility
 class BigDataGPTWorker(RequestGPTWorker):
     def __init__(
-        self,
-        assistant_repositorysitory: MongoAssistantRepositoryORM,
-        model_manager: GPTModelManager,
-        tokenizer: TextTokenizer,
+            self,
+            assistant_repositorysitory: MongoAssistantRepositoryORM,
+            model_manager: GPTModelManager,
+            tokenizer: TextTokenizer,
     ):
         super().__init__(assistant_repositorysitory, model_manager)
         self.__tokenizer = tokenizer
@@ -334,12 +339,12 @@ class BigDataGPTWorker(RequestGPTWorker):
 
         return chunk_size_in_characters
 
-    async def __init_NLTK_text_spliter(self) -> NLTKTextSplitter:
+    async def __init_nltk_text_spliter(self) -> NLTKTextSplitter:
         chunk_size = await self.__init_chunk_size()
         chunk_overlap = round(chunk_size * 0.3)
         try:
             nltk.data.find("tokenizers/punkt")
-            print("nltk.download('punkt') уже установлен")
+            insighter_logger.info("nltk.download('punkt') уже установлен")
             text_spliter = NLTKTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
             return text_spliter
         except LookupError as e:
@@ -350,7 +355,7 @@ class BigDataGPTWorker(RequestGPTWorker):
             return text_spliter
 
     async def __init_recursive_text_spliter(
-        self,
+            self,
     ) -> RecursiveCharacterTextSplitter:
         chunk_size = await self.__init_chunk_size()
         chunk_overlap = round(chunk_size * 0.15)
@@ -362,11 +367,11 @@ class BigDataGPTWorker(RequestGPTWorker):
 
     @ameasure_time
     async def make_gpt_request(
-        self,
-        assistant_id: str,
-        income_text: str,
-        additional_system_information: str = None,
-        additional_user_information: str = None,
+            self,
+            assistant_id: str,
+            income_text: str,
+            additional_system_information: str = None,
+            additional_user_information: str = None,
     ):
         assistant: AssistantInWork = await self.generate_data(
             assistant_id=assistant_id,
@@ -392,8 +397,10 @@ class BigDataGPTWorker(RequestGPTWorker):
         # Map
         map_template = f"""
                 {assistant_in_work.system_prompt}
-                {assistant_in_work.additional_system_information if assistant_in_work.additional_system_information else ""}
-                {assistant_in_work.additional_user_information if assistant_in_work.additional_user_information else ""}
+                {assistant_in_work.additional_system_information if
+        assistant_in_work.additional_system_information else ""}
+                {assistant_in_work.additional_user_information if
+        assistant_in_work.additional_user_information else ""}
                 {assistant_in_work.user_prompt_for_chunks}:
                 ->{'{docs}'}
                 ответ на русском :"""
@@ -402,8 +409,10 @@ class BigDataGPTWorker(RequestGPTWorker):
         # Reduce
         reduce_template = f""" 
                 {assistant_in_work.system_prompt}
-                {assistant_in_work.additional_system_information if assistant_in_work.additional_system_information else ""}
-                {assistant_in_work.additional_user_information if assistant_in_work.additional_user_information else ""}
+                {assistant_in_work.additional_system_information if
+        assistant_in_work.additional_system_information else ""}
+                {assistant_in_work.additional_user_information if
+        assistant_in_work.additional_user_information else ""}
                 {assistant_in_work.main_user_prompt}:
                 ->{'{docs}'}
                 ответ на русском:"""
@@ -458,11 +467,11 @@ class BigDataGPTWorker(RequestGPTWorker):
 
     @ameasure_time
     async def generate_data(
-        self,
-        assistant_id,
-        additional_system_information,
-        additional_user_information,
-        income_text=None,
+            self,
+            assistant_id,
+            additional_system_information,
+            additional_user_information,
+            income_text=None,
     ) -> AssistantInWork:
         # Выполняем асинхронные задачи параллельно и ждем их результатов
 
@@ -489,11 +498,11 @@ class IGPTDispatcher(ABC):
 # noinspection PyCompatibility
 class GPTDispatcher(IGPTDispatcher):
     def __init__(
-        self,
-        token_sizer: TextTokenizer,
-        model_manager: GPTModelManager,
-        one_request_gpt: OneRequestGPTWorker,
-        long_request_gpt: BigDataGPTWorker,
+            self,
+            token_sizer: TextTokenizer,
+            model_manager: GPTModelManager,
+            one_request_gpt: OneRequestGPTWorker,
+            long_request_gpt: BigDataGPTWorker,
     ):
         self.__token_sizer = token_sizer
         self.model_manager = model_manager
@@ -501,11 +510,11 @@ class GPTDispatcher(IGPTDispatcher):
         self.__long_request_gpt = long_request_gpt
 
     async def compile_request(
-        self,
-        assistant_id,
-        income_text: str,
-        additional_system_information: str = None,
-        additional_user_information: str = None,
+            self,
+            assistant_id,
+            income_text: str,
+            additional_system_information: str = None,
+            additional_user_information: str = None,
     ) -> str:
         """
         Run a request to chat GPT depending on text's token size
@@ -529,7 +538,7 @@ class GPTDispatcher(IGPTDispatcher):
             return result
         except GptApiRequestError as e:
             insighter_logger.exception(f"Failed to make request, exception is: {e.exception}")
-            raise CompileRequestError
+            raise CompileRequestError from e
 
     async def __factory_method(self, income_text: str):
         text_token_capacity = await self.__token_sizer.measure_text_capacity(text=income_text)
@@ -543,7 +552,7 @@ class GPTDispatcher(IGPTDispatcher):
                 raise LoadingLongRequestMethodError(
                     message="Failed to load usual long request method",
                     exception=e,
-                )
+                ) from e
         # if token capacity of text less than model size. Usual Gpt api request
         else:
             try:
@@ -553,22 +562,22 @@ class GPTDispatcher(IGPTDispatcher):
                 raise LoadingShortRequestMethodError(
                     message="Failed to load usual short request method",
                     exception=e,
-                )
+                ) from e
 
 
 class GPTDispatcherOnlyLonghain(IGPTDispatcher):
     def __init__(
-        self,
-        long_request_gpt: BigDataGPTWorker,
+            self,
+            long_request_gpt: BigDataGPTWorker,
     ):
         self.__long_request_gpt = long_request_gpt
 
     async def compile_request(
-        self,
-        assistant_id,
-        income_text: str,
-        additional_system_information: str = None,
-        additional_user_information: str = None,
+            self,
+            assistant_id,
+            income_text: str,
+            additional_system_information: str = None,
+            additional_user_information: str = None,
     ):
         """
         Run a request to chat GPT depending on text's token size
@@ -591,4 +600,4 @@ class GPTDispatcherOnlyLonghain(IGPTDispatcher):
             return result
         except GptApiRequestError as e:
             insighter_logger.exception(f"Failed to make request, exception is: {e.exception}")
-            raise CompileRequestError
+            raise CompileRequestError from e

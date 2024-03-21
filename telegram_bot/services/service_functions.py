@@ -3,7 +3,7 @@ import datetime as dt_t
 import math
 import os
 import re
-from abc import ABC
+from abc import ABC, abstractmethod
 from datetime import datetime
 
 import ffmpeg
@@ -33,6 +33,7 @@ from telegram_bot.states.summary_from_audio import FSMSummaryFromAudioScenario
 
 
 class IMediaFileManager(ABC):
+    @abstractmethod
     async def get_media_file(self, *args, **kwargs) -> str:
         pass
 
@@ -73,21 +74,21 @@ def ensure_directory_exists(path):
     """
     if not os.path.exists(path):
         os.makedirs(path, exist_ok=True)
-        print(f"Каталог создан: {path}")
+        insighter_logger.info(f"Каталог создан: {path}")
     else:
-        print(f"Каталог уже существует: {path}")
+        insighter_logger.info(f"Каталог уже существует: {path}")
 
 
 async def load_assistant(
     state: FSMContext,
-    Gpt_assistant: GPTAPIrequest,
+    gpt_assistant: GPTAPIrequest,
     assistant_repository: MongoAssistantRepositoryORM,
 ) -> GPTAPIrequest:
     data = await state.get_data()
     assistant_id = data.get("assistant_id")
     asisitent_prompt: Assistant = await assistant_repository.get_one_assistant(assistant_id=assistant_id)
-    Gpt_assistant.system_assistant = asisitent_prompt
-    return Gpt_assistant
+    gpt_assistant.system_assistant = asisitent_prompt
+    return gpt_assistant
 
 
 async def gen_doc_file_path(media_folder: str, sub_folder: str, message_event: Message) -> str:
@@ -199,11 +200,7 @@ async def estimate_transcribe_duration(message: Message):
 
     async def estimate_download_file_duration(media_type) -> float:
         file_size = media_type.file_size / (1024 * 1024)
-        print()
-        if file_size > 30:
-            second_per_mb = 4
-        else:
-            second_per_mb = 4
+        second_per_mb = 4 if file_size > 30 else 4
         return file_size * second_per_mb if file_size > 0 else file_size * second_per_mb
 
     async def estimate_transcribe_file_duration(media_type) -> float:
@@ -228,7 +225,7 @@ async def estimate_transcribe_duration(message: Message):
     elif media == "video":
         download_file_duration = await estimate_download_file_duration(media_type=message.video)
         transcribe_duration = await estimate_transcribe_file_duration(media_type=message.video)
-        print()
+ 
         return int((download_file_duration + transcribe_duration + 6))
     else:
         pass
@@ -265,7 +262,7 @@ async def get_media_duration_in_seconds(filepath):
     format_info = probe["format"]
     duration_sec = float(format_info["duration"])
 
-    print(f"Длина медиафайла: {duration_sec:.2f} секунд(ы)")
+    insighter_logger.info(f"Длина медиафайла: {duration_sec:.2f} секунд(ы)")
     return duration_sec
 
 
@@ -301,31 +298,6 @@ async def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base"
         insighter_logger.exception(e)
 
 
-# async def calculate_gpt_cost(input_text,
-#                              response_text,
-#                              model='gpt-3.5-turbo-16k-0613'):
-#     model_cost_mapping = {
-#         "gpt-4": 0.03,
-#         "gpt-4-completion": 0.06,
-#         "gpt-3.5-turbo": 0.002,
-#         "gpt-3.5-turbo-16k-0613": 0.002,
-#     }
-#
-#     # Получаем кодировку для модели с использованием tiktoken
-#     encoding = tiktoken.encoding_for_model(model)
-#
-#     # Подсчитываем количество токенов для входного и выходного текста
-#     prompt_tokens = len(encoding.encode(input_text))
-#     completion_tokens = len(encoding.encode(response_text))
-#
-#     # Определяем цену за токен исходя из модели
-#     base_cost_per_token = model_cost_mapping.get(model, None)
-#     if base_cost_per_token is None:
-#         raise ValueError(f"Unknown model: {model}. Please provide a valid OpenAI model name.")
-#
-#     # Считаем общую стоимость, учитывая количество токенов для запроса и ответа
-#     total_cost = ((prompt_tokens + completion_tokens) * base_cost_per_token) / 1000  # предполагаем цену за 1000 токенов
-#     return round(total_cost, 6)
 
 
 async def get_openai_model_cost_table(model_name="gpt-3.5-turbo", is_completion=False):
@@ -420,7 +392,7 @@ async def calculate_whisper_cost(duration_sec, model="base", quality="standard")
 
 async def format_filter(message, bot, state):
     system = config_data.system.system_type
-    print(system)
+    insighter_logger.info(system)
     if system == "docker":
         file_path_coro = server_file_manager.get_media_file(message=message, bot=bot)
     elif system == "local":

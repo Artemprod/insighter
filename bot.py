@@ -28,9 +28,9 @@ from insiht_bot_container import (
     user_repository,
     whisper_post_processor,
 )
-from telegram_bot.keyboards.main_menu import set_main_menu
 from logging_module.log_config import insighter_logger
 from main_process.process_pipline import ProcesQueuePipline
+from telegram_bot.keyboards.main_menu import set_main_menu
 from telegram_bot.midleware.antiflood import AntiFloodMiddleware
 from telegram_bot.midleware.attempts import CheckAttemptsMiddleware
 

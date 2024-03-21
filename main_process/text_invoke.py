@@ -10,8 +10,8 @@ import chardet
 from environs import Env
 from PyPDF2 import PdfReader
 
-from costume_excepyions.file_read_exceptions import UnknownPDFreadFileError
-from costume_excepyions.format_exceptions import EncodingDetectionError
+from costume_exceptions.file_read_exceptions import UnknownPDFreadFileError
+from costume_exceptions.format_exceptions import EncodingDetectionError
 from logging_module.log_config import insighter_logger
 from main_process.file_format_manager import FileFormatDefiner
 from main_process.Whisper.whisper_dispatcher import MediaRecognitionFactory
@@ -58,9 +58,9 @@ class PdfFileHandler(IPdfFileHandler):
                 content_pieces = [page.extract_text() if page.extract_text() else "" for page in pdf.pages]
                 content = "".join(content_pieces)
                 return content
-            except UnknownPDFreadFileError:
+            except UnknownPDFreadFileError as e:
                 insighter_logger.exception("Something went wrong during invoking text from PDF in corutine function")
-                raise UnknownPDFreadFileError
+                raise UnknownPDFreadFileError from e
 
     async def invoke_text(self, file_path):
         file_path = path.normpath(file_path)
@@ -97,7 +97,7 @@ class TxtFileHandler(ITxtFileHandler):
             return encoding
         except Exception as e:  # На практике следует уточнить тип исключения
             insighter_logger.exception("Unknown encoding detection error: %s", e)
-            raise EncodingDetectionError(f"Unknown encoding detection error: {e}")
+            raise EncodingDetectionError(f"Unknown encoding detection error: {e}") from e
 
 
 class VideoFileHandler(IVideoFileHandler):
@@ -171,7 +171,7 @@ class TextInvokeFactory(ITextInvokeFactory):
             invoker = await self.__create_invoker(file_path)
         except EncodingDetectionError as e:
             insighter_logger.exception(e, "Failf to invoke text")
-            raise EncodingDetectionError
+            raise EncodingDetectionError from e
 
         try:
             text = await invoker.invoke_text(file_path)
@@ -194,33 +194,35 @@ class TextInvokeFactory(ITextInvokeFactory):
         # TODO Выдать что формат не правильный вывести в сообщение бот ( точно правильное место )
 
 
-async def main():
-    # pdf = PdfFileHandler()
-    # path_pdf = r"C:\Users\artem\Downloads\тестовый документ.pdf"
-    # result = await pdf.invoke_text(path_pdf)
-    # print(result)
-    # video_path = r"C:\Users\artem\Downloads\День 0 C++ - Как я собираюсь готовится к собеседованию в Яндекс.mp4"
-    # trans = WhisperRecognitionAPI()
-    # result = await VideoFileHandler(trans).invoke_text(video_path)
-    # print(result)
-    # txt = TxtFileHandler()
-    # text_path = r"C:\Users\artem\Downloads\Telegram Desktop\Промпт_для_исследования_Инсайтер.txt"
-    # result = await txt.invoke_text(text_path)
-    # print(result)
-    # pdf = PdfFileHandler()
-    # text = TxtFileHandler()
-    # video = VideoFileHandler(ai_transcriber=WhisperRecognitionAPI())
-    # audio = AudioFileHandler(ai_transcriber=WhisperRecognitionAPI())
-    # foramt_def = TelegramServerFileFormatDefiner()
-    # factory = TextInvokeFactory(format_definer=foramt_def,
-    #                             pdf_handler=pdf,
-    #                             txt_handler=text,
-    #                             video_handler=video,
-    #                             audio_handler=audio)
-    # path_f = r"C:\Users\artem\Downloads\Telegram Desktop\ПЕРЕГОВОРНАЯ - Мерлин – 2024-01-23.ogg"
-    # invoker = await factory.create_invoker(file_path=path_f)
-    print()
+
+ 
 
 
 if __name__ == "__main__":
+    async def main():
+        ...
+        # pdf = PdfFileHandler()
+        # path_pdf = r"C:\Users\artem\Downloads\тестовый документ.pdf"
+        # result = await pdf.invoke_text(path_pdf)
+        # insighter_logger.info(result)
+        # video_path = r"C:\Users\artem\Downloads\День 0 C++ - Как я собираюсь готовится к собеседованию в Яндекс.mp4"
+        # trans = WhisperRecognitionAPI()
+        # result = await VideoFileHandler(trans).invoke_text(video_path)
+        # insighter_logger.info(result)
+        # txt = TxtFileHandler()
+        # text_path = r"C:\Users\artem\Downloads\Telegram Desktop\Промпт_для_исследования_Инсайтер.txt"
+        # result = await txt.invoke_text(text_path)
+        # insighter_logger.info(result)
+        # pdf = PdfFileHandler()
+        # text = TxtFileHandler()
+        # video = VideoFileHandler(ai_transcriber=WhisperRecognitionAPI())
+        # audio = AudioFileHandler(ai_transcriber=WhisperRecognitionAPI())
+        # foramt_def = TelegramServerFileFormatDefiner()
+        # factory = TextInvokeFactory(format_definer=foramt_def,
+        #                             pdf_handler=pdf,
+        #                             txt_handler=text,
+        #                             video_handler=video,
+        #                             audio_handler=audio)
+        # path_f = r"C:\Users\artem\Downloads\Telegram Desktop\ПЕРЕГОВОРНАЯ - Мерлин – 2024-01-23.ogg"
+        # invoker = await factory.create_invoker(file_path=path_f)
     asyncio.run(main())

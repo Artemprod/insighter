@@ -5,12 +5,12 @@ from environs import Env
 
 
 @dataclass
-class System_type:
+class SystemType:
     system_type: str
 
 
 @dataclass
-class OpenAI_KEY:
+class OpenAIKEY:
     key: str
 
 
@@ -49,11 +49,11 @@ class TelegramServer:
 @dataclass
 class Config:
     Bot: TelegramBot
-    ChatGPT: OpenAI_KEY
+    ChatGPT: OpenAIKEY
     data_base: MongoDB
     redis_storage: RedisStorage
     telegram_server: TelegramServer
-    system: System_type
+    system: SystemType
 
 
 def load_bot_config(path) -> Config:
@@ -63,10 +63,10 @@ def load_bot_config(path) -> Config:
     telegram_server = TelegramServer(
         URI=env("DOCKER_TELEGRAM_SERVER_OYSIDE_ONE_LOCATION"),
     )
-    open_ai_key = OpenAI_KEY(key=env("OPENAI_API_KEY"))
+    open_ai_key = OpenAIKEY(key=env("OPENAI_API_KEY"))
 
     return Config(
-        system=System_type(system_type=env("SYSTEM")),
+        system=SystemType(system_type=env("SYSTEM")),
         Bot=bot,
         ChatGPT=open_ai_key,
         telegram_server=telegram_server,

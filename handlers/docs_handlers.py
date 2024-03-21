@@ -4,12 +4,12 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery
 
 from DB.Mongo.mongo_db import UserDocsRepoORM
+from lexicon.LEXICON_RU import LEXICON_RU
 from telegram_bot.keyboards.calback_factories import DocumentsCallbackFactory
 from telegram_bot.keyboards.inline_keyboards import (
     create_inline_keyboard_show_docs,
     crete_inline_keyboard_back_from_docks,
 )
-from lexicon.LEXICON_RU import LEXICON_RU
 
 router = Router()
 

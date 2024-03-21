@@ -1,7 +1,5 @@
-import asyncio
 import os
 import time
-from datetime import time
 
 import openai
 import tiktoken
@@ -23,10 +21,13 @@ class WhisperRecognitionAPI:
     output_folder = os.path.normpath(os.path.abspath("temp_files"))
 
     def __init__(self):
+
         openai.api_key = WhisperRecognitionAPI.api_key
         self.bad_word_prompt = "Эм..Ага, так, да,да..."
         self.punctuation_prompt = "Добрый день, спасибо что пришли! Сегодня..."
         self._load_api()
+
+
 
     @classmethod
     def _load_api(cls):
@@ -55,7 +56,7 @@ class WhisperRecognitionAPI:
 
             end_time = time.time()
             insighter_logger.info("время транспирации:", end_time - start_time)
-            print(f"Время выполнения: {end_time - start_time} секунд")
+            insighter_logger.info(f"Время выполнения: {end_time - start_time} секунд")
             return result
         except Exception as e:
             insighter_logger.exception(f"Something went wrong during transcribing file with Whisper. \n Error: {e}")
@@ -74,11 +75,12 @@ class WhisperRecognitionAPI:
 
     async def get_api_request(self, file_path, prompt=""):
         """Given a prompt, transcribe the audio file."""
-        transcript = openai.audio.transcriptions.create(
-            file=open(file_path, "rb"),
-            model=WhisperRecognitionAPI.whisper_model,
-            prompt=f"{self.punctuation_prompt}, {self.bad_word_prompt}, {prompt}",
-        )
+        with open(file_path, "rb") as file:
+            transcript = await openai.audio.transcriptions.create(
+                file=file,
+                model=self.whisper_model,
+                prompt=f"{self.punctuation_prompt}, {self.bad_word_prompt}, {prompt}",
+            )
         return transcript.text
 
     # TODO Переделать в асинхронную функцию
@@ -160,15 +162,17 @@ class WhisperRecognitionAPI:
         return num_tokens
 
 
-async def main(file):
-    task = asyncio.create_task(WhisperRecognitionAPI().transcribe_file(file))
-    result = await task
-    print(result)
 
 
-if __name__ == "__main__":
-    # start_time = datetime.datetime.now()
-    # audio_path = r"D:\Python_projects\insighter\[Calculus глава 3] Формулы производных через геометрию [TubeRipper.com].webm"
-    # # output_folder = r"C:\Users\artem\OneDrive\Рабочий стол\text\chunks"
-    # asyncio.run(main(audio_path))
-    print()
+
+# if __name__ == "__main__":
+#     async def main(file):
+#         task = asyncio.create_task(WhisperRecognitionAPI().transcribe_file(file))
+#         result = await task
+#         print(result)
+#
+#
+#     audio_path = r"C:\Users\artem\OneDrive\Рабочий стол\Тестовые данные\WEBM mini.webm"
+#     # output_folder = r"C:\Users\artem\OneDrive\Рабочий стол\text\chunks"
+#     asyncio.run(main(audio_path))
+

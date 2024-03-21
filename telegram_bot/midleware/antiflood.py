@@ -16,7 +16,7 @@ class AntiFloodMiddleware(BaseMiddleware):
         data: Dict[str, Any],
     ) -> Any:
         # Определение chat_id из различных типов событий
-        chat_id = message = None
+        chat_id = None
         if hasattr(event, "message") and event.message and not event.callback_query:
             chat_id = event.message.chat.id
         elif hasattr(event, "callback_query") and event.callback_query and not event.message:

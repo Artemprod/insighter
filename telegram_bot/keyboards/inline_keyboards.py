@@ -115,7 +115,7 @@ def create_pagination_keyboard(*buttons: str) -> InlineKeyboardMarkup:
     kb_builder.row(
         *[
             InlineKeyboardButton(
-                text=LEXICON_BUT[button] if button in LEXICON_BUT else button,
+                text=LEXICON_BUT.get(button, button),
                 callback_data=button,
             )
             for button in buttons

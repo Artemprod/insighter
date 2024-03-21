@@ -3,7 +3,7 @@ import asyncio
 import openai
 from openai import AsyncOpenAI
 
-from costume_excepyions.ai_exceptions import EmptyResponseArrayError
+from costume_exceptions.ai_exceptions import EmptyResponseArrayError
 from logging_module.log_config import insighter_logger
 from main_process.ChatGPT.gpt_message import GPTMessage
 from main_process.ChatGPT.gpt_options import GPTOptions
@@ -29,7 +29,7 @@ class GPTClient:
         if self.__max_message_count is None:
             msg_list = (
                 [system_message] if system_message else [] + messages
-            )  # [GPTMessage(content="Ты писатель",role='system')] else [GPTMessage(content="Напиши историю", role='user')]
+            )
         elif len(messages) > self.__max_message_count:
             msg_list = ([system_message] if system_message else []) + messages[-self.__max_message_count :]
         else:
@@ -41,8 +41,8 @@ class GPTClient:
             "temperature": self.__temperature,
             "max_tokens": self.__max_return_tokens,
         }
-        print("gpt args:", gpt_args)
-        print("msg list", msg_list)
+        insighter_logger.info("gpt args:", gpt_args)
+        insighter_logger.info("msg list", msg_list)
         insighter_logger.info("gpt args:", gpt_args)
         insighter_logger.info("msg list", msg_list)
 

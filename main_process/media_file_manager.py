@@ -53,19 +53,19 @@ class MediaFileManager:
         saving_path,
     ):
         try:
-            print()
+       
             segment.export(saving_path)
-            print(f"Exported segment to {saving_path}")
+            insighter_logger.info(f"Exported segment to {saving_path}")
             return saving_path
         except Exception as e:
             insighter_logger.exception(e)
-            print(e, "Error export")
+            insighter_logger.info(e, "Error export")
 
     async def process_audio_segments(self, audio_file_path, output_directory_path):
         media_format = await self.__format_manager.define_format(file_path=audio_file_path)
-        print(media_format)
+        insighter_logger.info(media_format)
         audio = AudioSegment.from_file(audio_file_path, format=media_format)
-        print()
+     
         semaphore = asyncio.Semaphore(10)  # Control concurrency
         segment_length = 10 * 60 * 1000  # 10 minutes in milliseconds
         tasks = [
@@ -131,7 +131,7 @@ class MediaFileManager:
     #         try:
     #             result = await work
     #             insighter_logger.info("Successfully crop media")
-    #             print(result)
+    #             insighter_logger.info(result)
     #             return saving_path
     #         except Exception as e:
     #             insighter_logger.exception(e)

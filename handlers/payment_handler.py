@@ -17,8 +17,9 @@ from DB.Mongo.mongo_db import (
     TransactionRepoORM,
     UserBalanceRepoORM,
 )
-from telegram_bot.keyboards.inline_keyboards import crete_inline_keyboard_assistants
 from lexicon.LEXICON_RU import LEXICON_RU, MESSAGES, REFERRAL_MESSAGE, TARIFFS
+from logging_module.log_config import insighter_logger
+from telegram_bot.keyboards.inline_keyboards import crete_inline_keyboard_assistants
 from telegram_bot.services.service_functions import seconds_to_min_sec
 
 # Повесить мидлварь только на этот роутер
@@ -115,7 +116,7 @@ async def process_successful_payment(
     tariff_repository: TariffRepoORM,
     assistant_repository: MongoAssistantRepositoryORM,
 ):
-    print("successful_payment:")
+    insighter_logger.info("successful_payment:")
     successful_payment = message.successful_payment
     # Сохраняю трансакцию
     try:

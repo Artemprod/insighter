@@ -3,6 +3,7 @@ import asyncio
 from aiogram import Bot
 
 from insiht_bot_container import config_data
+from logging_module.log_config import insighter_logger
 
 
 async def logout_bot():
@@ -10,9 +11,9 @@ async def logout_bot():
     bot = Bot(token=config.Bot.tg_bot_token)
     try:
         await bot.log_out()
-        print("Бот успешно отключен от официального сервера Telegram.")
+        insighter_logger.info("Бот успешно отключен от официального сервера Telegram.")
     except Exception as e:
-        print(f"Произошла ошибка: {e}")
+        insighter_logger.info(f"Произошла ошибка: {e}")
     finally:
         await bot.session.close()
 

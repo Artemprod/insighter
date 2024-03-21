@@ -4,8 +4,8 @@ from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 
 from DB.Mongo.mongo_db import MongoUserRepoORM, UserBalanceRepoORM
-from telegram_bot.keyboards.inline_keyboards import crete_inline_keyboard_payed
 from lexicon.LEXICON_RU import TIME_ERROR_MESSAGE_MIDDLEWARE
+from telegram_bot.keyboards.inline_keyboards import crete_inline_keyboard_payed
 
 
 class CheckAttemptsMiddleware(BaseMiddleware):

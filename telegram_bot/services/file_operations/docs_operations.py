@@ -52,7 +52,7 @@
 #
 #
 # if __name__ == '__main__':
-#     print()
+#
 #     # Пример использования
 #     # file_format = 'pdf' # или 'txt'
 #     # file_handler = await FileProcessorFactory.get_file_handler(file_format)

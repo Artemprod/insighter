@@ -7,20 +7,20 @@ from notifiers.logging import NotificationHandler
 def load_loguru():
     env: Env = Env()
     env.read_env(".env")
-    LOGTAIL_SOURCE_TOKEN = env("LOGTAIL_INSIGTER_SOURCE")
+    logtail_source_token = env("LOGTAIL_INSIGTER_SOURCE")
 
-    ALLERT_BOT_TOKEN = env("LOGER_BOT_TOKEN")
-    TELEGRAM_NOTIFIERS_CHAT_IDS = [int(chat_id) for chat_id in env("TELEGRAM_CHAT_IDS").split(",")]
+    alert_bot_token = env("LOGER_BOT_TOKEN")
+    telegram_notifiers_chat_ids = [int(chat_id) for chat_id in env("TELEGRAM_CHAT_IDS").split(",")]
 
-    for chat_id in TELEGRAM_NOTIFIERS_CHAT_IDS:
+    for chat_id in telegram_notifiers_chat_ids:
         params = {
-            "token": ALLERT_BOT_TOKEN,
+            "token": alert_bot_token,
             "chat_id": chat_id,
         }
 
         logger.add(NotificationHandler("telegram", defaults=params), level="ERROR")
 
-    logtail_handler = LogtailHandler(source_token=LOGTAIL_SOURCE_TOKEN)
+    logtail_handler = LogtailHandler(source_token=logtail_source_token)
     logger.add(
         logtail_handler,
         format="{message}",

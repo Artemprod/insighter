@@ -3,7 +3,7 @@ import asyncio
 import openai
 from openai import AsyncOpenAI
 
-from costume_excepyions.ai_exceptions import EmptyResponseArrayError
+from costume_exceptions.ai_exceptions import EmptyResponseArrayError
 from logging_module.log_config import insighter_logger
 from main_process.Whisper.whisper_information import WhisperModelManager
 
@@ -33,7 +33,7 @@ class WhisperClient:
                 "language": language,
                 "temperature": temperature,
             }
-            print("gpt args:", gpt_args)
+            insighter_logger.info("gpt args:", gpt_args)
             insighter_logger.info("gpt args:", gpt_args)
             response = await self.__request(gpt_args)
             return response

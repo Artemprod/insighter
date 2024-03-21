@@ -15,10 +15,10 @@ from DB.Mongo.mongo_db import (
     MongoUserRepoORM,
     UserBalanceRepoORM,
 )
+from lexicon.LEXICON_RU import LEXICON_RU
 from telegram_bot.keyboards.inline_keyboards import (
     crete_inline_keyboard_assistants,
 )
-from lexicon.LEXICON_RU import LEXICON_RU
 from telegram_bot.services.service_functions import (
     generate_telegram_user_link,
     seconds_to_min_sec,
@@ -50,7 +50,8 @@ async def process_start_command(
     assistant_keyboard = crete_inline_keyboard_assistants(assistant_repository, user_tg_id=message.from_user.id)
 
     await message.answer(
-        text=f"{LEXICON_RU['description']}\n\n<b>Осталось минут: {await seconds_to_min_sec(time_left)}</b> \n\n{LEXICON_RU['next']} ",
+        text=f"{LEXICON_RU['description']}\n\n<b>Осталось минут: "
+             f"{await seconds_to_min_sec(time_left)}</b> \n\n{LEXICON_RU['next']} ",
         reply_markup=assistant_keyboard,
     )
 
@@ -162,7 +163,7 @@ async def process_payed(
 
 
 @router.callback_query(F.data == "base")
-async def process_payed(
+async def process_base_answer(
     callback: CallbackQuery,
     assistant_repository: MongoAssistantRepositoryORM,
     user_repository: MongoUserRepoORM,

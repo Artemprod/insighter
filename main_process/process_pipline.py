@@ -58,7 +58,7 @@ class ProcesQueuePipline:
         """
 
         data: PipelineData = await income_items_queue.get()
-        data.process_time.setdefault("produce_file_path", dict())
+        data.process_time.setdefault("produce_file_path", {})
         data.process_time["produce_file_path"]["start_time"] = time.time()
         insighter_logger.info("запуск в пайплане первый воркер", data)
         message: aiogram.types.Message = data.telegram_message
@@ -100,7 +100,8 @@ class ProcesQueuePipline:
         transcribed_text_sender_queue: Queue,
     ):
         """
-        получает на входт ссылку на файл в фаоловой системе на выходе текст. Передает словарь с данными о пользователе и тексте
+        получает на входт ссылку на файл в фаоловой системе
+        на выходе текст. Передает словарь с данными о пользователе и тексте
         :param gen_answer_queue:
         :param transcribed_text_sender_queue:
         :param invoke_text_queue:
@@ -109,7 +110,7 @@ class ProcesQueuePipline:
         """
         while True:
             data: PipelineData = await invoke_text_queue.get()
-            data.process_time.setdefault("invoke_text", dict())
+            data.process_time.setdefault("invoke_text", {})
             data.process_time["invoke_text"]["start_time"] = time.time()
             insighter_logger.info(f"Получил данные для извлечения текста {data}")
             path_to_file = data.file_path
@@ -184,7 +185,7 @@ class ProcesQueuePipline:
     async def generate_summary_answer(self, gen_answer_queue: Queue, result_dispatching_queue: Queue):
         while True:
             data: PipelineData = await gen_answer_queue.get()
-            data.process_time.setdefault("generate_summary_answer", dict())
+            data.process_time.setdefault("generate_summary_answer", {})
             data.process_time["generate_summary_answer"]["start_time"] = time.time()
             insighter_logger.info(f"Получил данные для генерации текста {data}")
 

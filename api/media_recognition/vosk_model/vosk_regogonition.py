@@ -5,12 +5,14 @@ from os import path
 import vosk
 from pydub import AudioSegment
 
+from logging_module.log_config import insighter_logger
+
 model_dir = os.path.abspath("models")
 
 model_path = path.normpath(path.join(model_dir, "vosk-model-small-ru-0.22"))
 model = vosk.Model(model_path)
 samplerate = 16000
-print()
+
 
 
 def voice_message_recognition(voice_message_path):
@@ -18,7 +20,7 @@ def voice_message_recognition(voice_message_path):
         # Прямое открытие файла MP3
         audio = AudioSegment.from_mp3(voice_message_path)
     except Exception as e:
-        print("Ошибка загрузки аудиофайла:", str(e))
+        insighter_logger.info("Ошибка загрузки аудиофайла:", str(e))
         return
 
     # Преобразование аудио в одноканальный (моно) WAV с нужной частотой дискретизации
@@ -43,4 +45,4 @@ def voice_message_recognition(voice_message_path):
 
 if __name__ == "__main__":
     a = voice_message_recognition(r"/text/3979 Продакт-менеджмент.mp3")
-    print()
+  

@@ -1,10 +1,11 @@
 from environs import Env
 
-from costume_excepyions.config_loading import (
+from costume_exceptions.config_loading import (
     APIKeyLoadError,
     ModelVersionLoadingError,
     WhisperLanguageLoadError,
 )
+from logging_module.log_config import insighter_logger
 
 
 class WhisperModelManager:
@@ -19,7 +20,7 @@ class WhisperModelManager:
             return env("WHISPER_MODEL_VERSION")
         except Exception as e:
             insighter_logger.exception(f"Failed to load model version. Error {e} in class {self.__dict__}")
-            raise ModelVersionLoadingError(f"Failed to load model version. Error {e} in class {self.__dict__}")
+            raise ModelVersionLoadingError(f"Failed to load model version. Error {e} in class {self.__dict__}") from e
 
     def get_gpt_api_key(self):
         env = Env()
@@ -28,7 +29,7 @@ class WhisperModelManager:
             return env("OPENAI_API_KEY")
         except Exception as e:
             insighter_logger.exception(f"Failed to load open ai key. Error {e} in class {self.__dict__}")
-            raise APIKeyLoadError(f"Failed to load open ai key. Error {e} in class {self.__dict__}")
+            raise APIKeyLoadError(f"Failed to load open ai key. Error {e} in class {self.__dict__}") from e
 
     def get_whisper_language(self):
         env = Env()
@@ -37,7 +38,7 @@ class WhisperModelManager:
             return env("WHISPER_LANGUAGE")
         except Exception as e:
             insighter_logger.exception(f"Failed to load language. Error {e} in class {self.__dict__}")
-            raise WhisperLanguageLoadError(f"Failed to load language. Error {e} in class {self.__dict__}")
+            raise WhisperLanguageLoadError(f"Failed to load language. Error {e} in class {self.__dict__}") from e
 
     def get_temperature(self):
         env = Env()
@@ -46,4 +47,4 @@ class WhisperModelManager:
             return env("WHISPER_MODEL_TEMPERATURE")
         except Exception as e:
             insighter_logger.exception(f"Failed to load language. Error {e} in class {self.__dict__}")
-            raise WhisperLanguageLoadError(f"Failed to load language. Error {e} in class {self.__dict__}")
+            raise WhisperLanguageLoadError(f"Failed to load language. Error {e} in class {self.__dict__}") from e

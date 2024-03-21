@@ -1,6 +1,8 @@
 import asyncio
 from functools import wraps
 
+from logging_module.log_config import insighter_logger
+
 
 def progress_bar_decorator(bot, chat_id, timer, process_name):
     def decorator(func):
@@ -101,7 +103,7 @@ async def progress_bar(bot, chat_id, timer, process_name, func_done):
                     parse_mode="HTML",
                 )
             except Exception as e:
-                print(f"Ошибка при обновлении прогресс-бара: {e}")
+                insighter_logger.info(f"Ошибка при обновлении прогресс-бара: {e}")
 
             await asyncio.sleep(1)  # Ожидание перед следующим обновлением
     finally:

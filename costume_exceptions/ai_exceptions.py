@@ -1,4 +1,4 @@
-class TokenCapacityMeasurement(Exception):
+class TokenCapacityMeasurementError(Exception):
     def __init__(self, message):
         super().__init__(message)
         self.__message = message
@@ -7,7 +7,7 @@ class TokenCapacityMeasurement(Exception):
         return f"{self.__message}"
 
 
-class CharactersInTokenMeasurement(Exception):
+class CharactersInTokenMeasurementError(Exception):
     def __init__(self, message):
         super().__init__(message)
         self.__message = message

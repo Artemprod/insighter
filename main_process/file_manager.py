@@ -9,8 +9,8 @@ from aiogram import Bot
 from aiogram.types import ContentType, Message
 from environs import Env
 
-from costume_excepyions.format_exceptions import TelegramCantFindFileError
-from costume_excepyions.path_exceptions import (
+from costume_exceptions.format_exceptions import TelegramCantFindFileError
+from costume_exceptions.path_exceptions import (
     TelegramServerFileCantBeFoundError,
     TelegramServerVolumePathExistingError,
 )
@@ -84,14 +84,14 @@ class TelegramMediaFileManager(MediaFileManager):
             result = await self.get_file_path(message, bot)
             self.log_file_info("info", message, result)
             return result
-        except TelegramServerVolumePathExistingError:
+        except TelegramServerVolumePathExistingError as e:
             self.log_file_info(
                 "error",
                 message,
                 None,
                 "File hasn't been found in common docker volume",
             )
-            raise TelegramServerFileCantBeFoundError("File hasn't been found in common docker volume")
+            raise TelegramServerFileCantBeFoundError("File hasn't been found in common docker volume") from e
 
     async def get_file_path(self, message: Message, bot: Bot) -> str:
         file = await self.get_file(message, bot)
@@ -110,7 +110,7 @@ class TelegramMediaFileManager(MediaFileManager):
 
 
 class ServerFileManager(MediaFileManager):
-    local_file_path = r"E:\insighter_ai\insight_bot\main_process\temp"
+    local_file_path = r"D:\projects\AIPO\insighter_ai\insighter\main_process\temp"
 
     @dataclass
     class Configs:
@@ -177,7 +177,7 @@ class ServerFileManager(MediaFileManager):
             )
             return client
         except Exception as e:
-            print("Ошибка подключения сервера", e)
+            insighter_logger.info("Ошибка подключения сервера", e)
 
     def list_files_in_directory(self, directory_path):
         client = self.__connect_server()
@@ -188,7 +188,7 @@ class ServerFileManager(MediaFileManager):
 
             return files
         except Exception as e:
-            print(f"Ошибка при получении списка файлов: {e}")
+            insighter_logger.info(f"Ошибка при получении списка файлов: {e}")
             return None
         finally:
             client.close()
@@ -215,7 +215,7 @@ class ServerFileManager(MediaFileManager):
 
             return result == "exists"
         except Exception as e:
-            print(f"Ошибка подключения: {e}")
+            insighter_logger.info(f"Ошибка подключения: {e}")
             return False
         finally:
             client.close()
@@ -231,7 +231,7 @@ class ServerFileManager(MediaFileManager):
             size_mb = size_bytes / (1024 * 1024)  # Преобразование из байтов в мегабайты
             return size_mb
         except Exception as e:
-            print(f"Ошибка: {e}")
+            insighter_logger.info(f"Ошибка: {e}")
             return None
         finally:
             client.close()
@@ -263,7 +263,7 @@ class ServerFileManager(MediaFileManager):
             return local_file_full_path
         except Exception as e:
             insighter_logger.exception(e)
-            print(f"Ошибка при загрузке файла: {e}")
+            insighter_logger.info(f"Ошибка при загрузке файла: {e}")
             return None
         finally:
             client.close()
@@ -304,13 +304,13 @@ class ServerFileManager(MediaFileManager):
             stderr_result = stderr.read().decode().strip()
 
             if stderr_result:
-                print(f"Ошибка при удалении файла: {stderr_result}")
+                insighter_logger.info(f"Ошибка при удалении файла: {stderr_result}")
                 return False
             else:
-                print(f"Файл успешно удален: {path}")
+                insighter_logger.info(f"Файл успешно удален: {path}")
                 return True
         except Exception as e:
-            print(f"Ошибка подключения: {e}")
+            insighter_logger.info(f"Ошибка подключения: {e}")
             return False
         finally:
             client.close()

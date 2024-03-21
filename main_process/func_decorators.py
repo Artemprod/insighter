@@ -1,6 +1,8 @@
 import functools
 import time
 
+from logging_module.log_config import insighter_logger
+
 
 def ameasure_time(func):
     """
@@ -19,7 +21,7 @@ def ameasure_time(func):
         start_time = time.time()
         result = await func(*args, **kwargs)
         end_time = time.time()
-        print(f"Time to execute {func.__name__}: {end_time - start_time}")
+        insighter_logger.info(f"Time to execute {func.__name__}: {end_time - start_time}")
         return result
 
     return wrapper
