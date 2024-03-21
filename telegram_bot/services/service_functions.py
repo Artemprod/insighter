@@ -16,7 +16,7 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
 from api.gpt import GPTAPIrequest
-from costume_excepyions.system_exceptions import SystemTypeError
+from costume_exceptions.system_exceptions import SystemTypeError
 from DB.Mongo.mongo_db import MongoAssistantRepositoryORM, UserBalanceRepoORM
 from DB.Mongo.mongo_enteties import Assistant
 from enteties.pipline_data import PipelineData
@@ -465,19 +465,3 @@ async def format_filter(message, bot, state):
         await state.set_state(FSMSummaryFromAudioScenario.load_file)
 
 
-if __name__ == "__main__":
-    # Пример использования функции
-    container_id = "bf88eef88779"
-    container_file_path = "/var/lib/telegram-bot-api/6970555880:AAFrBj3go_TXClpcQzDOs50DwHCFAUD6QlM/music/file_3.mp3"
-    host_file_path = r"C:\Users\artem\OneDrive\Рабочий стол\text\file_3.mp3"
-
-    # if copy_file_from_container(container_id, container_file_path, host_file_path):
-    #     print("Файл успешно скопирован.")
-    # else:
-    #     print("Ошибка копирования файла.")
-    with open(
-        r"C:\Users\artem\OneDrive\Рабочий стол\Тестовые данные\TXTshort.txt",
-        encoding="utf-8",
-    ) as f:
-        d = f.read()
-        print(generate_title(d))
