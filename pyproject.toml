@@ -93,9 +93,8 @@ select = [
     "T20",   # flake8-insighter_logger.info
     "TRIO",  # flake8-trio
     "S",     # flake8-bandit
-#    "EM",    # flake8-errmsg
     "LOG",  # flake8-logging
-#    "RUF",  # Ruff-specific rules
+
 ]
 fixable = ["ALL"]
 

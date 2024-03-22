@@ -20,4 +20,4 @@ COPY . ./
 
 ENTRYPOINT ["poetry", "run"]
 
-CMD ["python3", "bot.py"]
+CMD ["python", "bot.py"]
