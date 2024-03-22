@@ -10,6 +10,10 @@ jobs:
       - name: Print to console 
         #Команда для операционной системы которую надо выполнить 
         run: echo Hello Actions
+      - name: Print a few lines
+        run: |
+          echo first line
+          echo second line
     
     
     
