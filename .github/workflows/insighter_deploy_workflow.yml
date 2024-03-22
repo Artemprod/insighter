@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - dev
-
 jobs:
     #Билд и заливка докер имиджа в регестри
     build:
