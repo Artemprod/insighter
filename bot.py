@@ -7,12 +7,10 @@ from aiogram.client.telegram import TelegramAPIServer
 from aiogram.fsm.storage.redis import Redis, RedisStorage
 
 from enteties.queue_entity import PipelineQueues
-from handlers import (
-    command_handler,
-    docs_handlers,
+from telegram_bot.handlers import (
     payment_handler,
-    process_file_handler,
 )
+from telegram_bot.handlers import docs_handlers, command_handler, process_file_handler
 from insiht_bot_container import (
     assistant_repository,
     config_data,
