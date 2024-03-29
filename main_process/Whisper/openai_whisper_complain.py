@@ -20,7 +20,8 @@ class WhisperClient:
 
     async def __load_prompts(self):
         return (f"{self.punctuation_prompt}, {self.bad_word_prompt}",)
-
+    #TODO передавть уже подговтоленые данные ( S3 хранение данных или буфер хранить на облочных хранилищах ) мно может и пофиг
+    #Передовать байты сюда просто берет данные и передает реквести
     async def whisper_compile(self, file_path, prompts="", context=""):
         """Given a prompt, transcribe the audio file."""
         language = self.__whisper_manager.get_whisper_language()
@@ -39,6 +40,7 @@ class WhisperClient:
             return response
 
     async def __request(self, gpt_args: dict) -> str:
+        #TODO можно просто авейтить без создания таски
         task = self.client.audio.transcriptions.create(**gpt_args)
         if task is None:
             raise ValueError("Task is None!")
