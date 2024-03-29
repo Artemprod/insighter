@@ -163,16 +163,3 @@ class WhisperRecognitionAPI:
 
 
 
-
-
-# if __name__ == "__main__":
-#     async def main(file):
-#         task = asyncio.create_task(WhisperRecognitionAPI().transcribe_file(file))
-#         result = await task
-#         print(result)
-#
-#
-#     audio_path = r"C:\Users\artem\OneDrive\Рабочий стол\Тестовые данные\WEBM mini.webm"
-#     # output_folder = r"C:\Users\artem\OneDrive\Рабочий стол\text\chunks"
-#     asyncio.run(main(audio_path))
-
