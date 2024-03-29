@@ -9,6 +9,8 @@ from main_process.file_format_manager import FileFormatDefiner
 
 
 class MediaFileManager:
+    export_format_for_chunks = 'mp3'
+
     def __init__(self, file_format_manager: FileFormatDefiner):
         self.__format_manager = file_format_manager
 
@@ -28,9 +30,10 @@ class MediaFileManager:
         return size_mb
 
     async def export_segment_async(
-        self,
-        segment,
-        saving_path,
+            self,
+            segment,
+            saving_path,
+
     ):
         loop = asyncio.get_running_loop()
         try:
@@ -40,6 +43,7 @@ class MediaFileManager:
                     self.export_segment,
                     segment,
                     saving_path,
+
                 ),
             )
             return result
@@ -49,33 +53,36 @@ class MediaFileManager:
 
     @staticmethod
     def export_segment(
-        segment,
-        saving_path,
+            segment,
+            saving_path
     ):
         try:
-       
-            segment.export(saving_path)
+
+            segment.export(saving_path, format=MediaFileManager.export_format_for_chunks)
             insighter_logger.info(f"Exported segment to {saving_path}")
             return saving_path
         except Exception as e:
             insighter_logger.exception(e)
             insighter_logger.info(e, "Error export")
 
-    async def process_audio_segments(self, audio_file_path, output_directory_path):
+    async def process_audio_segments(self,
+                                     audio_file_path,
+                                     output_directory_path,
+                                     ):
         media_format = await self.__format_manager.define_format(file_path=audio_file_path)
         insighter_logger.info(media_format)
         audio = AudioSegment.from_file(audio_file_path, format=media_format)
-     
         semaphore = asyncio.Semaphore(10)  # Control concurrency
         segment_length = 10 * 60 * 1000  # 10 minutes in milliseconds
         tasks = [
             self.limit_task(
                 semaphore,
                 self.export_segment_async,
-                audio[i : i + segment_length],
+                audio[i: i + segment_length],
                 os.path.join(
                     output_directory_path,
-                    f"chunk_{i // segment_length}.{media_format}",
+                    f"chunk_{i // segment_length}.{MediaFileManager.export_format_for_chunks}",
+
                 ),
             )
             for i in range(0, len(audio), segment_length)
@@ -83,60 +90,11 @@ class MediaFileManager:
 
         return await asyncio.gather(*tasks)
 
-    async def limit_task(self, semaphore, func, *args, **kwargs):
+    @staticmethod
+    async def limit_task(semaphore,
+                         func,
+                         *args,
+                         **kwargs):
         async with semaphore:
             result = await func(*args, **kwargs)
             return result
-
-    # async def slice_big_audio(self,
-    # audio_file_path,
-    #                           output_directory_path: str,
-    #                           ):
-    #     """Разделяет большой аудифайл на куски и переводит вформат mp3"""
-    #     media_format = await self.__format_manager.define_format(file_path=audio_file_path)
-    #     audio = AudioSegment.from_file(audio_file_path, format=media_format)
-    #     # TODO Вынести параметры сигментации в верхний уровень
-    #     segment_length = 10 * 60 * 100
-    #     tasks = []
-    #     # Crop audio to segments
-    #     for i in range(0, len(audio), segment_length):
-    #         segment = audio[i:i + segment_length]
-    #
-    #         #TODO Разобраться как не конверитировать формата не коверитировать в таком формате
-    #         chunk_file_name: str = f"chunk_{i // segment_length}.mp3"
-    #         saving_path = os.path.join(output_directory_path, chunk_file_name)
-    #         tasks.append(asyncio.create_task(self.__run_export_segment_in_pool(segment=segment,
-    #                                                                            saving_path=saving_path)))
-    #     result = await asyncio.gather(*tasks)
-    #     return result
-    #
-    # @staticmethod
-    # async def export_segment(segment,
-    #                      saving_path):
-    #     try:
-    #         segment.export(saving_path, format="mp3")
-    #         return saving_path
-    #     except Exception as e:
-    #         insighter_logger.exception(f"failed to export piece of audio segment. Exception {e}")
-
-    # async def __run_export_segment_in_pool(self, segment,
-    #                                        saving_path):
-    #     loop = asyncio.get_event_loop()
-    #     with ProcessPoolExecutor(max_workers=os.cpu_count()) as pool:
-    #         work = loop.run_in_executor(
-    #             pool, self.export_segment,
-    #             segment,
-    #             saving_path,
-    #         )
-    #         try:
-    #             result = await work
-    #             insighter_logger.info("Successfully crop media")
-    #             insighter_logger.info(result)
-    #             return saving_path
-    #         except Exception as e:
-    #             insighter_logger.exception(e)
-    #     try:
-    #
-    #         return saving_path
-    #     except Exception as e:
-    #         insighter_logger.exception(e)

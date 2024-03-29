@@ -59,14 +59,19 @@ class Config:
 def load_bot_config(path) -> Config:
     env: Env = Env()
     env.read_env(path)
-    bot = TelegramBot(tg_bot_token=env("TELEGRAM_BOT_TOKEN"))
+    system_type = env("SYSTEM")
+    bot = None
+    if system_type == "local":
+        bot = TelegramBot(tg_bot_token=env("TEST_TELEGRAM_BOT_TOKEN"))
+    elif system_type == "docker":
+        bot = TelegramBot(tg_bot_token=env("TELEGRAM_BOT_TOKEN"))
     telegram_server = TelegramServer(
         URI=env("DOCKER_TELEGRAM_SERVER_OYSIDE_ONE_LOCATION"),
     )
     open_ai_key = OpenAIKEY(key=env("OPENAI_API_KEY"))
 
     return Config(
-        system=SystemType(system_type=env("SYSTEM")),
+        system=SystemType(system_type=system_type),
         Bot=bot,
         ChatGPT=open_ai_key,
         telegram_server=telegram_server,

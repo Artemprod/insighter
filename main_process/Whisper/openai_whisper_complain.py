@@ -34,18 +34,16 @@ class WhisperClient:
                 "language": language,
                 "temperature": temperature,
             }
-            insighter_logger.info("gpt args:", gpt_args)
-            insighter_logger.info("gpt args:", gpt_args)
+            insighter_logger.info(f"gpt args: {gpt_args}")
             response = await self.__request(gpt_args)
             return response
 
-    async def __request(self, gpt_args: dict) -> str:
-        #TODO можно просто авейтить без создания таски
+    async def __request(self,
+                        gpt_args: dict) -> str:
         task = self.client.audio.transcriptions.create(**gpt_args)
         if task is None:
             raise ValueError("Task is None!")
-
-        response = await asyncio.create_task(task)
+        response = await task
         if response.text:
             insighter_logger.info("response from whisper received")
             return response.text

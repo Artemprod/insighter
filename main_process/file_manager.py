@@ -132,7 +132,11 @@ class ServerFileManager(MediaFileManager):
     def __bot_token(cls):
         env: Env = Env()
         env.read_env(".env")
-        return env("TELEGRAM_BOT_TOKEN")
+        system_type = env("SYSTEM")
+        if system_type == "local":
+            return env("TEST_TELEGRAM_BOT_TOKEN")
+        elif system_type == "docker":
+            return env("TELEGRAM_BOT_TOKEN")
 
     async def get_media_file(self, message: Message, bot: Bot) -> str:
         remote_file_path = await self.get_file(message, bot)
@@ -237,8 +241,8 @@ class ServerFileManager(MediaFileManager):
             client.close()
 
     def download_file(
-        self,
-        remote_file_path,
+            self,
+            remote_file_path,
     ):
         client = self.__connect_server()
 
@@ -258,6 +262,7 @@ class ServerFileManager(MediaFileManager):
             local_file_path = ServerFileManager.local_file_path
             local_file_full_path = os.path.join(local_file_path, file_name)
             sftp = client.open_sftp()
+            print()
             sftp.get(server_file_path, local_file_full_path)
             sftp.close()
             return local_file_full_path
