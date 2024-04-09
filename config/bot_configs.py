@@ -66,7 +66,7 @@ def load_bot_config(path) -> Config:
     elif system_type == "docker":
         bot = TelegramBot(tg_bot_token=env("TELEGRAM_BOT_TOKEN"))
     telegram_server = TelegramServer(
-        URI=env("DOCKER_TELEGRAM_SERVER_OYSIDE_ONE_LOCATION"),
+        URI=env("DOCKER_TELEGRAM_SERVER"),
     )
     open_ai_key = OpenAIKEY(key=env("OPENAI_API_KEY"))
 

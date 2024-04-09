@@ -23,10 +23,11 @@ services:
       - mongodb:/DB/Mongo/data/db
     networks:
       - app_network
+
   redis_insighter:
     image: redis
     ports:
-      - "7083:7083"
+      - "7085:7085"
     restart: always
     volumes:
       - redis_insighter_volume:/DB/Redis/insighter/data/db
