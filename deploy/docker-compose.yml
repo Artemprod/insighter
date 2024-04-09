@@ -31,7 +31,9 @@ services:
     restart: always
     volumes:
       - redis_insighter_volume:/DB/Redis/insighter/data/db
-    command: ["redis-server", "--port", "7083"]
+    command: ["redis-server", "--port", "7085"]
+    networks:
+      - app_network
 
   insighter_bot:
     image: docker.io/artemprod/insighter_bot:${IMAGE_TAG:-latest}
