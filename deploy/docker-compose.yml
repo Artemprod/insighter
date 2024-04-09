@@ -1,0 +1,56 @@
+version: "3.8"
+services:
+  telegram_bot_server:
+    image: aiogram/telegram-bot-api:latest
+    ports:
+      - "8081:8081"
+    volumes:
+      - shared_volume:/var/lib/telegram-bot-api
+    environment:
+      - TELEGRAM_API_ID=23823287
+      - TELEGRAM_API_HASH=fe561473a06737cb358db923e05e7868
+      - TELEGRAM_LOCAL=True
+    restart: always
+    networks:
+      - app_network
+
+  mongo_insight:
+    image: mongo
+    ports:
+      - "7080:27017"
+    restart: always
+    volumes:
+      - mongodb:/DB/Mongo/data/db
+    networks:
+      - app_network
+  redis_insighter:
+    image: redis
+    ports:
+      - "7083:7083"
+    restart: always
+    volumes:
+      - redis_insighter_volume:/DB/Redis/insighter/data/db
+    command: ["redis-server", "--port", "7083"]
+
+  insighter_bot:
+    image: docker.io/artemprod/insighter_bot:${IMAGE_TAG:-latest}
+    volumes:
+      - shared_volume:/var/lib/telegram-bot-api
+    depends_on:
+      - mongo_insight
+      - redis_insighter
+      - telegram_bot_server
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - app_network
+
+volumes:
+  mongodb:
+  redis_insighter_volume:
+  shared_volume:
+
+networks:
+  app_network:
+    external: true

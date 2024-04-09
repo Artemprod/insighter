@@ -165,7 +165,7 @@ class ProcesQueuePipline:
                             - data.process_time["invoke_text"]["start_time"]
                         )
                 else:
-                    insighter_logger.exception(AttributeError, "No recognized text")
+                    insighter_logger.exception("No recognized text")
                     await data.fsm_bot_state.set_state(FSMSummaryFromAudioScenario.load_file)
                     await data.telegram_bot.send_message(
                         chat_id=data.telegram_message.chat.id,
@@ -174,7 +174,7 @@ class ProcesQueuePipline:
                     await self.progress_bar.stop(chat_id=data.telegram_message.from_user.id)
 
             else:
-                insighter_logger.exception(AttributeError, "No path to file")
+                insighter_logger.exception("No path to file")
                 await data.fsm_bot_state.set_state(FSMSummaryFromAudioScenario.load_file)
                 await data.telegram_bot.send_message(
                     chat_id=data.telegram_message.chat.id,
@@ -222,7 +222,7 @@ class ProcesQueuePipline:
                             - data.process_time["generate_summary_answer"]["start_time"]
                         )
                 else:
-                    insighter_logger.exception(AttributeError, "No summary")
+                    insighter_logger.exception("No summary")
                     await data.fsm_bot_state.set_state(FSMSummaryFromAudioScenario.load_file)
                     await data.telegram_bot.send_message(
                         chat_id=data.telegram_message.chat.id,
@@ -231,7 +231,7 @@ class ProcesQueuePipline:
                     await self.progress_bar.stop(chat_id=data.telegram_message.from_user.id)
 
             else:
-                insighter_logger.exception(AttributeError, "No text")
+                insighter_logger.exception("No text")
                 await data.fsm_bot_state.set_state(FSMSummaryFromAudioScenario.load_file)
                 await data.telegram_bot.send_message(
                     chat_id=data.telegram_message.chat.id,
