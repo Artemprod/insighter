@@ -79,7 +79,7 @@ jobs:
             echo "${{vars.STAGE_ENV_FILE}}" >> ./deploy/.env
             docker context create stage_context --docker "host=ssh://ubuntu@ec2-65-1-130-15.ap-south-1.compute.amazonaws.com" || true
             docker --context stage_context compose -f deploy/docker-compose.yml down --rmi all
-            docker --context stage_context system prune -f
+            docker --context stage_context system prune -af
             export IMAGE_TAG=sha-${{ steps.set_sha.outputs.sha_short }}
             docker --context stage_context compose -f deploy/docker-compose.yml down
             docker --context stage_context compose -f deploy/docker-compose.yml up -d --wait --wait-timeout 60
