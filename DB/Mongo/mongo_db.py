@@ -15,7 +15,6 @@ from logging_module.log_config import insighter_logger
 
 class MongoORMConnection:
     def __init__(self,
-
                  mongo,
                  system_type):
         if system_type == "local":
