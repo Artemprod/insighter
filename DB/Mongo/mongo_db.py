@@ -37,7 +37,6 @@ class MongoAssistantRepositoryORM:
     def get_all_assistants():
         return Assistant.objects()
 
-
     @staticmethod
     async def get_one_assistant(assistant_id: str):
         return Assistant.objects(assistant_id=assistant_id).get()
