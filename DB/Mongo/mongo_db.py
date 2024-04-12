@@ -30,7 +30,6 @@ class MongoORMConnection:
                 port=int(mongo.local_port),
             )
 
-
 # TODO переписать все асинхронно с использованием асинхронной библиотекк mongoengine
 class MongoAssistantRepositoryORM:
     @staticmethod
