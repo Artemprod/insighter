@@ -28,6 +28,8 @@ class MongoDB:
     # для пользования на сервере в доккере
     docker_port: int
     docker_host: Union[int, str]
+    db_user_name: str
+    db_password: str
 
 
 @dataclass
@@ -81,6 +83,8 @@ def load_bot_config(path) -> Config:
             local_host=env("MONGO_DB_LOCAL_HOST"),
             docker_port=(env("MONGO_DB_DOCKER_PORT")),
             docker_host=(env("MONGO_DB_DOCKER_HOST")),
+            db_user_name=(env("MONGO_USERNAME")),
+            db_password=(env("MONGO_PASSWORD")),
         ),
         redis_storage=(
             RedisStorage(

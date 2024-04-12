@@ -16,10 +16,6 @@ services:
     image: docker.io/artemprod/insighter_bot:${IMAGE_TAG:-latest}
     volumes:
       - shared_volume:/var/lib/telegram-bot-api
-    depends_on:
-      - mongo_insight
-      - redis_insighter
-      - telegram_bot_server
     restart: always
     env_file:
       - .env
