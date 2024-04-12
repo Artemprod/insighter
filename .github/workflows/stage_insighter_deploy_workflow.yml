@@ -80,7 +80,7 @@ jobs:
             docker --context stage_context compose -f deploy/stage/docker-compose.yml down insighter_bot
             docker system prune -af 
             export IMAGE_TAG=sha-${{ steps.set_sha.outputs.sha_short }}
-            docker --context stage_context network create -d bridge stage_network
+#            docker --context stage_context network create -d bridge stage_network
             docker --context stage_context compose -f deploy/stage/docker-compose.yml up -d --wait --wait-timeout 60
 
     
