@@ -78,9 +78,8 @@ jobs:
             echo "${{vars.STAGE_ENV_FILE}}" >> ./deploy/stage/.env
             docker context create stage_context --docker "host=ssh://${{vars.STAGE_SSH_ADRESS}}" || true
             docker --context stage_context compose -f deploy/stage/docker-compose.yml down insighter_bot
-            docker system prune -af 
+            docker --context stage_context system prune -af
             export IMAGE_TAG=sha-${{ steps.set_sha.outputs.sha_short }}
-
             docker --context stage_context compose -f deploy/stage/docker-compose.yml up -d --wait --wait-timeout 60
 
     
