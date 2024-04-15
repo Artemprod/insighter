@@ -25,11 +25,12 @@ class MongoORMConnection:
             )
         elif system_type == "docker":
             connect(
+                username=mongo.db_user_name,
+                password=mongo.db_password,
                 db=mongo.bd_name,
                 host=mongo.docker_host,
                 port=int(mongo.local_port),
             )
-
 
 # TODO переписать все асинхронно с использованием асинхронной библиотекк mongoengine
 class MongoAssistantRepositoryORM:

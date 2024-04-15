@@ -29,12 +29,7 @@ class MediaFileManager:
         size_mb = size_bytes / (1024 * 1024)  # Преобразование из байтов в мегабайты
         return size_mb
 
-    async def export_segment_async(
-            self,
-            segment,
-            saving_path,
-
-    ):
+    async def export_segment_async(self, segment, saving_path, ):
         loop = asyncio.get_running_loop()
         try:
             result = await loop.run_in_executor(
