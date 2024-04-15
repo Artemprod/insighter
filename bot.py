@@ -2,6 +2,7 @@ import asyncio
 import os.path
 
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.fsm.storage.redis import Redis, RedisStorage
@@ -73,7 +74,9 @@ async def create_bot(queue_pipeline) -> None:
             tariff_repository=tariff_repository,
         )
         insighter_logger.info("docker system initialized")
-    bot: Bot = Bot(token=config.Bot.tg_bot_token, parse_mode="HTML", session=session)
+    bot: Bot = Bot(token=config.Bot.tg_bot_token,
+                   default=DefaultBotProperties(parse_mode="HTML"),
+                   session=session)
 
     # Добовляем хэгдлеры в диспечтер через роутеры
     dp.include_router(command_handler.router)

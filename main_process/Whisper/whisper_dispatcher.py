@@ -27,6 +27,7 @@ class MediaFileTranscriber:
 # noinspection PyTypeChecker
 class ShortMediaFilesTranscriber(MediaFileTranscriber):
     async def transcribe_media(self, file) -> str:
+
         task = asyncio.create_task(self.whisper_client.whisper_compile(file_path=file))
         try:
             recognized_text = await task
@@ -39,9 +40,9 @@ class ShortMediaFilesTranscriber(MediaFileTranscriber):
 
 class LongMediaFilesTranscriber(MediaFileTranscriber):
     def __init__(
-        self,
-        whisper_client: WhisperClient,
-        media_file_manager: MediaFileManager,
+            self,
+            whisper_client: WhisperClient,
+            media_file_manager: MediaFileManager,
     ):
         super().__init__(whisper_client)
         self.__media_file_manager = media_file_manager
@@ -63,9 +64,9 @@ class LongMediaFilesTranscriber(MediaFileTranscriber):
                 insighter_logger.exception(e)
 
     async def __do_request(
-        self,
-        audio_file_path: str,
-        output_directory_path: aiofiles.tempfile.TemporaryDirectory,
+            self,
+            audio_file_path: str,
+            output_directory_path: aiofiles.tempfile.TemporaryDirectory,
     ):
         try:
             slice_task = asyncio.create_task(
@@ -89,23 +90,13 @@ class LongMediaFilesTranscriber(MediaFileTranscriber):
             insighter_logger.exception(f"Failed to transcribe: {e}")
             return ""
 
-            # try:
-            #     transcribed_text = await self.whisper_client.whisper_compile(file_path=file,
-            #                                                                  )
-            #     total_transcription += transcribed_text + "\n"
-            #     insighter_logger.info(f"{number} piece of text is ready ... ")
-            # except EmptyResponseArrayError:
-            #     insighter_logger.exception(EmptyResponseArrayError)
-            #     #TODO придумать как обработвать
-            #     continue
-
 
 class MediaRecognitionFactory:
     def __init__(
-        self,
-        media_file_manager: MediaFileManager,
-        short_media_transcriber: ShortMediaFilesTranscriber,
-        long_media_transcriber: LongMediaFilesTranscriber,
+            self,
+            media_file_manager: MediaFileManager,
+            short_media_transcriber: ShortMediaFilesTranscriber,
+            long_media_transcriber: LongMediaFilesTranscriber,
     ):
         self.__media_file_manager = media_file_manager
         self.__long_media_transcriber = long_media_transcriber
@@ -126,15 +117,16 @@ class MediaRecognitionFactory:
         except Exception as e:
             insighter_logger.exception(f"Failed to make request, exception is: {e}")
             raise TranscribitionError(exception=e) from e
-
+ #TODO Заменить фабрику на один метод сейчкас это быстрая починка костыль
     async def __factory_method(self, file_path: str) -> MediaFileTranscriber:
         audio_size = await self.__media_file_manager.get_file_size_mb(file_path)
+        insighter_logger.info(f'file size {audio_size}')
         # TODO вынести настройки размера модеоли
         if audio_size < 24:
             try:
-                return self.__short_media_transcriber
+                return self.__long_media_transcriber
             except Exception as e:
-                insighter_logger.exception(f"faild to load class of short trancriber {e}")
+                insighter_logger.exception(f"faild to load class of long trancriber {e}")
                 raise LoadingShorthandsTranscriberError(exception=e) from e
         elif audio_size >= 24:
             try:
@@ -144,5 +136,3 @@ class MediaRecognitionFactory:
                 raise LoadingLongTranscriberError(exception=e) from e
         else:
             raise MediaSizeError(message="File size equal 0")
-
-
