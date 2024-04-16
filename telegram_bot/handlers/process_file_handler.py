@@ -32,7 +32,7 @@ from telegram_bot.services.service_functions import (
     format_filter,
     from_pipeline_data_object,
     generate_text_file,
-    seconds_to_min_sec, validate_youtube_url, estimate_media_duration,
+    seconds_to_min_sec, validate_youtube_url, estimate_media_duration, estimate_transcribe_duration,
 )
 from telegram_bot.states.summary_from_audio import FSMSummaryFromAudioScenario
 
@@ -44,11 +44,11 @@ env.read_env(".env")
 
 @router.callback_query(AssistantCallbackFactory.filter())
 async def processed_gen_answer(
-    callback: CallbackQuery,
-    callback_data: AssistantCallbackFactory,
-    state: FSMContext,
-    assistant_repository: MongoAssistantRepositoryORM,
-    user_repository: MongoUserRepoORM,
+        callback: CallbackQuery,
+        callback_data: AssistantCallbackFactory,
+        state: FSMContext,
+        assistant_repository: MongoAssistantRepositoryORM,
+        user_repository: MongoUserRepoORM,
 ):
     # Проверяем, есть ли текст в сообщении
     if callback.message.text:
@@ -99,21 +99,21 @@ async def wrong_file_format(message: Message, bot: Bot):
 
 @router.message(
     FSMSummaryFromAudioScenario.load_file, F.content_type.in_({
-            ContentType.TEXT,
+        ContentType.TEXT,
 
-        }
+    }
     ),
 )
 async def processed_load_youtube_file(
-    message: Message,
-    bot: Bot,
-    state: FSMContext,
-    assistant_repository: MongoAssistantRepositoryORM,
-    user_repository: MongoUserRepoORM,
-    progress_bar: ProgressBarClient,
-    process_queue: PipelineQueues,
-    user_balance_repo: UserBalanceRepoORM,
-    document_repository: UserDocsRepoORM,
+        message: Message,
+        bot: Bot,
+        state: FSMContext,
+        assistant_repository: MongoAssistantRepositoryORM,
+        user_repository: MongoUserRepoORM,
+        progress_bar: ProgressBarClient,
+        process_queue: PipelineQueues,
+        user_balance_repo: UserBalanceRepoORM,
+        document_repository: UserDocsRepoORM,
 ):
     income_text = message.text
     is_youtube = await validate_youtube_url(income_text)
@@ -162,9 +162,9 @@ async def processed_load_youtube_file(
             )
             await bot.delete_message(
                 chat_id=message.chat.id,
-                message_id=download_message.message_id,)
+                message_id=download_message.message_id, )
 
-                # Start pipline process
+            # Start pipline process
             await process_queue.income_items_queue.put(pipline_object)
             await state.set_state(FSMSummaryFromAudioScenario.get_result)
             # Переход в новый стату вызов функции явно
@@ -179,7 +179,13 @@ async def processed_load_youtube_file(
                 user_balance_repo=user_balance_repo,
                 document_repository=document_repository,
             )
-
+            progres_bar_duration = await estimate_transcribe_duration(seconds=file_duration)
+            await progress_bar.start(
+                chat_id=message.from_user.id,
+                time=progres_bar_duration,
+                process_name="Извлекаю текст ... ",
+                bot_token=bot.token
+            )
         else:
             keyboard = crete_inline_keyboard_payed()
 
@@ -199,23 +205,23 @@ async def processed_load_youtube_file(
 
 @router.message(
     FSMSummaryFromAudioScenario.load_file, F.content_type.in_({
-            ContentType.VOICE,
-            ContentType.AUDIO,
-            ContentType.VIDEO,
-            ContentType.DOCUMENT,
-        }
+        ContentType.VOICE,
+        ContentType.AUDIO,
+        ContentType.VIDEO,
+        ContentType.DOCUMENT,
+    }
     ),
 )
 async def processed_load_file(
-    message: Message,
-    bot: Bot,
-    state: FSMContext,
-    assistant_repository: MongoAssistantRepositoryORM,
-    user_repository: MongoUserRepoORM,
-    progress_bar: ProgressBarClient,
-    process_queue: PipelineQueues,
-    user_balance_repo: UserBalanceRepoORM,
-    document_repository: UserDocsRepoORM,
+        message: Message,
+        bot: Bot,
+        state: FSMContext,
+        assistant_repository: MongoAssistantRepositoryORM,
+        user_repository: MongoUserRepoORM,
+        progress_bar: ProgressBarClient,
+        process_queue: PipelineQueues,
+        user_balance_repo: UserBalanceRepoORM,
+        document_repository: UserDocsRepoORM,
 ):
     data = await state.get_data()
     assistant_id = data.get("assistant_id")
@@ -292,15 +298,15 @@ async def processed_load_file(
 
 @router.message(FSMSummaryFromAudioScenario.get_result)
 async def processed_do_ai_conversation(
-    message: Message,
-    bot: Bot,
-    state: FSMContext,
-    assistant_repository: MongoAssistantRepositoryORM,
-    user_repository: MongoUserRepoORM,
-    progress_bar: ProgressBarClient,
-    process_queue: PipelineQueues,
-    user_balance_repo: UserBalanceRepoORM,
-    document_repository: UserDocsRepoORM,
+        message: Message,
+        bot: Bot,
+        state: FSMContext,
+        assistant_repository: MongoAssistantRepositoryORM,
+        user_repository: MongoUserRepoORM,
+        progress_bar: ProgressBarClient,
+        process_queue: PipelineQueues,
+        user_balance_repo: UserBalanceRepoORM,
+        document_repository: UserDocsRepoORM,
 ):
     transcribed_text_data: PipelineData = await process_queue.transcribed_text_sender_queue.get()
     if transcribed_text_data.transcribed_text:
