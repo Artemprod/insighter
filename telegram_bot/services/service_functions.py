@@ -195,40 +195,13 @@ async def form_content(summary: str, transcribed_text: str) -> str:
     return f"Самари:\n {summary} \n\n Транскрибация аудио:\n {transcribed_text}"
 
 
-async def estimate_transcribe_duration(message: Message):
-    media = message.content_type
+async def estimate_transcribe_duration(seconds):
+    second_per_second = 12
+    prediction = seconds / second_per_second
+    return prediction
 
-    async def estimate_download_file_duration(media_type) -> float:
-        file_size = media_type.file_size / (1024 * 1024)
-        second_per_mb = 4 if file_size > 30 else 4
-        return file_size * second_per_mb if file_size > 0 else file_size * second_per_mb
 
-    async def estimate_transcribe_file_duration(media_type) -> float:
-        second_per_second = 12
-        prediction = media_type.duration / second_per_second
-        return prediction
 
-    if media == "document":
-        download_file_duration = await estimate_download_file_duration(media_type=message.document)
-        return int((download_file_duration + 6))
-
-    elif media == "music" or media == "audio":
-        download_file_duration = await estimate_download_file_duration(media_type=message.audio)
-        transcribe_duration = await estimate_transcribe_file_duration(media_type=message.audio)
-        return int((download_file_duration + transcribe_duration + 6))
-
-    elif media == "voice":
-        download_file_duration = await estimate_download_file_duration(media_type=message.voice)
-        transcribe_duration = await estimate_transcribe_file_duration(media_type=message.voice)
-        return int((download_file_duration + transcribe_duration + 6))
-
-    elif media == "video":
-        download_file_duration = await estimate_download_file_duration(media_type=message.video)
-        transcribe_duration = await estimate_transcribe_file_duration(media_type=message.video)
-
-        return int((download_file_duration + transcribe_duration + 6))
-    else:
-        pass
 
 
 async def compare_user_minutes_and_file(user_tg_id, file_duration, user_balance_repo: UserBalanceRepoORM):
@@ -236,7 +209,7 @@ async def compare_user_minutes_and_file(user_tg_id, file_duration, user_balance_
     return user_time_balance - file_duration
 
 
-async def estimate_media_duration_in_minutes(bot: Bot, message: Message):
+async def estimate_media_duration(bot: Bot, message: Message):
     file_path_coro = None
     system_type = config_data.system.system_type
     if system_type == "docker":

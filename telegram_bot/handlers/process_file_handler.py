@@ -29,11 +29,10 @@ from telegram_bot.services.service_functions import (
     calculate_whisper_cost,
     compare_user_minutes_and_file,
     estimate_gen_summary_duration,
-    estimate_media_duration_in_minutes,
     format_filter,
     from_pipeline_data_object,
     generate_text_file,
-    seconds_to_min_sec, validate_youtube_url,
+    seconds_to_min_sec, validate_youtube_url, estimate_media_duration,
 )
 from telegram_bot.states.summary_from_audio import FSMSummaryFromAudioScenario
 
@@ -132,8 +131,10 @@ async def processed_load_youtube_file(
             user_balance_repo=user_balance_repo,
         )
         if checking >= 0:
+            download_message = await message.answer(text="Скачиваю видео ...")
             path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
                                                                        path=f"/var/lib/docker/volumes/insighter_ai_shared_volume/_data/{bot.token}/music/"))
+
             # path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
             #                                                            path=r"D:\projects\AIPO\insighter_ai\insighter\main_process\temp"))
 
@@ -159,8 +160,11 @@ async def processed_load_youtube_file(
                 additional_system_information=None,
                 additional_user_information=None,
             )
+            await bot.delete_message(
+                chat_id=message.chat.id,
+                message_id=download_message.message_id,)
 
-            # Start pipline process
+                # Start pipline process
             await process_queue.income_items_queue.put(pipline_object)
             await state.set_state(FSMSummaryFromAudioScenario.get_result)
             # Переход в новый стату вызов функции явно
@@ -175,6 +179,7 @@ async def processed_load_youtube_file(
                 user_balance_repo=user_balance_repo,
                 document_repository=document_repository,
             )
+
         else:
             keyboard = crete_inline_keyboard_payed()
 
@@ -219,7 +224,7 @@ async def processed_load_file(
         file_data = await format_filter(message=message, bot=bot, state=state)
         if file_data:
             file_path, income_file_format = file_data
-            file_duration = await estimate_media_duration_in_minutes(bot=bot, message=message)
+            file_duration = await estimate_media_duration(bot=bot, message=message)
             # Проверяем есть ли минуты
             checking = await compare_user_minutes_and_file(
                 user_tg_id=message.from_user.id,
@@ -316,6 +321,7 @@ async def processed_do_ai_conversation(
         chat_id=transcribed_text_data.telegram_message.from_user.id,
         time=predicted_duration_for_summary,
         process_name="написание саммари",
+        bot_token=bot.token
     )
     result: PipelineData = await process_queue.result_dispatching_queue.get()
     process_queue.result_dispatching_queue.task_done()
