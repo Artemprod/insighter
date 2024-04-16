@@ -63,16 +63,14 @@ class ProcesQueuePipline:
         insighter_logger.info("запуск в пайплане первый воркер", data)
         message: aiogram.types.Message = data.telegram_message
         file_duration = data.file_duration
-        print()
         try:
             progres_bar_duration = await estimate_transcribe_duration(seconds=file_duration)
-            if progres_bar_duration is not None:
-                await self.progress_bar.start(
-                    chat_id=message.from_user.id,
-                    time=progres_bar_duration,
-                    process_name="распознавание файла ...",
-                    bot_token=data.telegram_bot.token
-                )
+            await self.progress_bar.start(
+                chat_id=message.from_user.id,
+                time=progres_bar_duration,
+                process_name="распознавание файла ...",
+                bot_token=data.telegram_bot.token
+            )
             await invoke_text_queue.put(data)
             income_items_queue.task_done()
             document_id: str = await self.__database_document_repository.create_new_doc(
