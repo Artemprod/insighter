@@ -50,7 +50,7 @@ def get_relative_path(path):
     """
 
     parts = path.split("/")
-    return "/".join(parts[len(parts) - 1 :])
+    return "/".join(parts[len(parts) - 1:])
 
 
 async def get_media_file_path(user_media_dir: str, file_id: str, file_extension: str) -> str:
@@ -80,9 +80,9 @@ def ensure_directory_exists(path):
 
 
 async def load_assistant(
-    state: FSMContext,
-    gpt_assistant: GPTAPIrequest,
-    assistant_repository: MongoAssistantRepositoryORM,
+        state: FSMContext,
+        gpt_assistant: GPTAPIrequest,
+        assistant_repository: MongoAssistantRepositoryORM,
 ) -> GPTAPIrequest:
     data = await state.get_data()
     assistant_id = data.get("assistant_id")
@@ -147,15 +147,15 @@ async def generate_text_file(content: str, message_event: Message) -> tuple:
 
 
 async def from_pipeline_data_object(
-    message: Message,
-    bot: Bot,
-    assistant_id: str,
-    fsm_state: FSMContext,
-    file_duration: float,
-    file_path: str,
-    file_type: str,
-    additional_system_information=None,
-    additional_user_information=None,
+        message: Message,
+        bot: Bot,
+        assistant_id: str,
+        fsm_state: FSMContext,
+        file_duration: float,
+        file_path: str,
+        file_type: str,
+        additional_system_information=None,
+        additional_user_information=None,
 ) -> PipelineData:
     """
     Creates a PipelineData object from the provided inputs.
@@ -225,7 +225,7 @@ async def estimate_transcribe_duration(message: Message):
     elif media == "video":
         download_file_duration = await estimate_download_file_duration(media_type=message.video)
         transcribe_duration = await estimate_transcribe_file_duration(media_type=message.video)
- 
+
         return int((download_file_duration + transcribe_duration + 6))
     else:
         pass
@@ -296,8 +296,6 @@ async def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base"
         return num_tokens
     except Exception as e:
         insighter_logger.exception(e)
-
-
 
 
 async def get_openai_model_cost_table(model_name="gpt-3.5-turbo", is_completion=False):
@@ -437,3 +435,15 @@ async def format_filter(message, bot, state):
         await state.set_state(FSMSummaryFromAudioScenario.load_file)
 
 
+async def validate_youtube_url(url):
+    # Шаблоны URL, которые поддерживают список видео, короткие ссылки и стандартные ссылки
+    youtube_regex = (
+        r'(https?://)?(www\.)?'
+        '(youtube|youtu|youtube-nocookie)\.(com|be)/'
+        '(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'  # YouTube видео всегда имеют 11-значный ID
+    )
+
+    if re.match(youtube_regex, url):
+        return True
+    else:
+        return False

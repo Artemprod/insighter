@@ -36,6 +36,8 @@ langchain-core = "^0.1.33"
 langchain-community = "^0.0.29"
 langchain = "^0.1.13"
 mypy = "^1.9.0"
+pydantic-settings = "^2.2.1"
+pytube = "^15.0.0"
 
 
 

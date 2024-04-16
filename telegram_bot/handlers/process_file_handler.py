@@ -1,3 +1,4 @@
+import asyncio
 
 from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramBadRequest
@@ -16,6 +17,7 @@ from lexicon.LEXICON_RU import LEXICON_RU, TIME_ERROR_MESSAGE
 from logging_module.log_config import insighter_logger
 from main_process.ChatGPT.gpt_models_information import GPTModelManager
 from main_process.process_pipline import PipelineData, PipelineQueues
+from main_process.youtube_option.youtube_downloader import get_youtube_audio_duration, download_youtube_audio
 from telegram_bot.keyboards.calback_factories import AssistantCallbackFactory
 from telegram_bot.keyboards.inline_keyboards import (
     crete_inline_keyboard_assistants,
@@ -31,7 +33,7 @@ from telegram_bot.services.service_functions import (
     format_filter,
     from_pipeline_data_object,
     generate_text_file,
-    seconds_to_min_sec,
+    seconds_to_min_sec, validate_youtube_url,
 )
 from telegram_bot.states.summary_from_audio import FSMSummaryFromAudioScenario
 
@@ -76,6 +78,7 @@ async def processed_gen_answer(
     FSMSummaryFromAudioScenario.load_file,
     ~F.content_type.in_(
         {
+            ContentType.TEXT,
             ContentType.VOICE,
             ContentType.AUDIO,
             ContentType.VIDEO,
@@ -94,11 +97,100 @@ async def wrong_file_format(message: Message, bot: Bot):
         ),
     )
 
+@router.message(
+    FSMSummaryFromAudioScenario.load_file, F.content_type.in_({
+            ContentType.TEXT,
+
+        }
+    ),
+)
+async def processed_load_youtube_file(
+    message: Message,
+    bot: Bot,
+    state: FSMContext,
+    assistant_repository: MongoAssistantRepositoryORM,
+    user_repository: MongoUserRepoORM,
+    progress_bar: ProgressBarClient,
+    process_queue: PipelineQueues,
+    user_balance_repo: UserBalanceRepoORM,
+    document_repository: UserDocsRepoORM,
+):
+    income_text = message.text
+    is_youtube = await validate_youtube_url(income_text)
+    if is_youtube:
+        data = await state.get_data()
+        assistant_id = data.get("assistant_id")
+        instruction_message_id = int(data.get("instruction_message_id"))
+
+        duration = asyncio.create_task(get_youtube_audio_duration(url=income_text))
+        file_duration = await duration
+
+        checking = await compare_user_minutes_and_file(
+            user_tg_id=message.from_user.id,
+            file_duration=file_duration,
+            user_balance_repo=user_balance_repo,
+        )
+        if checking >= 0:
+            path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
+                                                                       path=f"/var/lib/docker/volumes/insighter_ai_shared_volume/_data/{bot.token}/music/"))
+            file_path = await path_to_video
+            # await check_if_i_can_load()
+            if instruction_message_id:
+                try:
+                    await bot.delete_message(
+                        chat_id=message.chat.id,
+                        message_id=instruction_message_id,
+                    )
+                except TelegramBadRequest as e:
+                    insighter_logger.exception(f"Ошибка при попытке удалить сообщение: {e}")
+
+            # Form data to summary pipline
+            pipline_object = await from_pipeline_data_object(
+                message=message,
+                bot=bot,
+                assistant_id=assistant_id,
+                fsm_state=state,
+                file_duration=file_duration,
+                file_path=file_path,
+                file_type='mp4',
+                additional_system_information=None,
+                additional_user_information=None,
+            )
+
+            # Start pipline process
+            await process_queue.income_items_queue.put(pipline_object)
+            await state.set_state(FSMSummaryFromAudioScenario.get_result)
+            # Переход в новый стату вызов функции явно
+            await processed_do_ai_conversation(
+                message=message,
+                state=state,
+                user_repository=user_repository,
+                bot=bot,
+                assistant_repository=assistant_repository,
+                progress_bar=progress_bar,
+                process_queue=process_queue,
+                user_balance_repo=user_balance_repo,
+                document_repository=document_repository,
+            )
+        else:
+            keyboard = crete_inline_keyboard_payed()
+
+            await message.bot.send_message(
+                chat_id=message.chat.id,
+                text=TIME_ERROR_MESSAGE.format(time=await seconds_to_min_sec(abs(checking))),
+            )
+            await message.answer_contact(
+                phone_number="+79896186869",
+                first_name="Александр",
+                last_name="Чернышов",
+                reply_markup=keyboard,
+            )
+    else:
+        await message.answer(text=LEXICON_RU["is_not_youtube_link"])
+
 
 @router.message(
-    FSMSummaryFromAudioScenario.load_file,
-    F.content_type.in_(
-        {
+    FSMSummaryFromAudioScenario.load_file, F.content_type.in_({
             ContentType.VOICE,
             ContentType.AUDIO,
             ContentType.VIDEO,
