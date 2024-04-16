@@ -62,7 +62,6 @@ class ProcesQueuePipline:
         data.process_time["produce_file_path"]["start_time"] = time.time()
         insighter_logger.info("запуск в пайплане первый воркер", data)
         message: aiogram.types.Message = data.telegram_message
-
         try:
             progres_bar_duration = await estimate_transcribe_duration(message=message)
             if progres_bar_duration is not None:

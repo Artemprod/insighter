@@ -97,6 +97,7 @@ async def wrong_file_format(message: Message, bot: Bot):
         ),
     )
 
+
 @router.message(
     FSMSummaryFromAudioScenario.load_file, F.content_type.in_({
             ContentType.TEXT,
@@ -133,6 +134,9 @@ async def processed_load_youtube_file(
         if checking >= 0:
             path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
                                                                        path=f"/var/lib/docker/volumes/insighter_ai_shared_volume/_data/{bot.token}/music/"))
+            # path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
+            #                                                            path=r"D:\projects\AIPO\insighter_ai\insighter\main_process\temp"))
+
             file_path = await path_to_video
             # await check_if_i_can_load()
             if instruction_message_id:
@@ -143,7 +147,6 @@ async def processed_load_youtube_file(
                     )
                 except TelegramBadRequest as e:
                     insighter_logger.exception(f"Ошибка при попытке удалить сообщение: {e}")
-
             # Form data to summary pipline
             pipline_object = await from_pipeline_data_object(
                 message=message,
@@ -186,7 +189,7 @@ async def processed_load_youtube_file(
                 reply_markup=keyboard,
             )
     else:
-        await message.answer(text=LEXICON_RU["is_not_youtube_link"])
+        await message.answer(text=LEXICON_RU["is_not_youtube_link"].format(link=income_text))
 
 
 @router.message(
