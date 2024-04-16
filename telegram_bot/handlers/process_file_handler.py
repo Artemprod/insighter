@@ -137,6 +137,7 @@ async def processed_load_youtube_file(
             # path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
             #                                                            path=r"D:\projects\AIPO\insighter_ai\insighter\main_process\temp"))
 
+
             file_path = await path_to_video
             # await check_if_i_can_load()
             if instruction_message_id:
