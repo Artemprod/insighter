@@ -8,11 +8,13 @@ import os
 def download_audio(url, path='/'):
     try:
         yt = YouTube(url)
+        #TODO обернуть не всю функцию а только часть которую необходмо сделать декоратором
         audio_stream = yt.streams.get_audio_only()
         output_file = audio_stream.download(output_path=path)
         return os.path.normpath(output_file)
     except Exception as e:
         print("Произошла ошибка при загрузке аудио:", e)
+
 
 
 def get_duration(url):

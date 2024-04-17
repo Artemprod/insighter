@@ -198,10 +198,7 @@ async def form_content(summary: str, transcribed_text: str) -> str:
 async def estimate_transcribe_duration(seconds):
     second_per_second = 12
     prediction = seconds / second_per_second
-    return prediction
-
-
-
+    return round(prediction)
 
 
 async def compare_user_minutes_and_file(user_tg_id, file_duration, user_balance_repo: UserBalanceRepoORM):
@@ -416,7 +413,4 @@ async def validate_youtube_url(url):
         '(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'  # YouTube видео всегда имеют 11-значный ID
     )
 
-    if re.match(youtube_regex, url):
-        return True
-    else:
-        return False
+    return bool(re.match(youtube_regex, url))

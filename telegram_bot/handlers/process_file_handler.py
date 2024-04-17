@@ -13,6 +13,7 @@ from DB.Mongo.mongo_db import (
     UserBalanceRepoORM,
     UserDocsRepoORM,
 )
+from insiht_bot_container import config_data
 from lexicon.LEXICON_RU import LEXICON_RU, TIME_ERROR_MESSAGE
 from logging_module.log_config import insighter_logger
 from main_process.ChatGPT.gpt_models_information import GPTModelManager
@@ -117,11 +118,12 @@ async def processed_load_youtube_file(
 ):
     income_text = message.text
     is_youtube = await validate_youtube_url(income_text)
+    # TODO if not is_youtube лучше обрезать ветку которая не нужна ( если это это какая то простая валидция то быстро) (Сделать все валидации вверху ретернами )
     if is_youtube:
         data = await state.get_data()
         assistant_id = data.get("assistant_id")
         instruction_message_id = int(data.get("instruction_message_id"))
-
+# TODO не понятно что это такое называй таску очивидно а если не испольуешт то зачем сохрантья неймниг должен быть четким семантика должна сохраниться
         duration = asyncio.create_task(get_youtube_audio_duration(url=income_text))
         file_duration = await duration
 
@@ -130,16 +132,22 @@ async def processed_load_youtube_file(
             file_duration=file_duration,
             user_balance_repo=user_balance_repo,
         )
+
+        #TODO Негативный кейс вынести вверх
+        # TODO вынести в отдельную функцю обе части логики ( permisson )
         if checking >= 0:
             download_message = await message.answer(text="Скачиваю видео ...")
-            path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
-                                                                       path=f"/var/lib/docker/volumes/insighter_ai_shared_volume/_data/{bot.token}/music/"))
-
+            #TODO Вынести в конфиг энв фалйл только
             # path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
-            #                                                            path=r"D:\projects\AIPO\insighter_ai\insighter\main_process\temp"))
+            #                                                            path=f"/var/lib/docker/volumes/insighter_ai_shared_volume/_data/{bot.token}/music/"))
+
+            path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
+                                                                        path=r"D:\projects\AIPO\insighter_ai\insighter\main_process\temp"))
+
 
             file_path = await path_to_video
             # await check_if_i_can_load()
+            # TODO не очивидн что делает кусок стейта
             if instruction_message_id:
                 try:
                     await bot.delete_message(
@@ -165,6 +173,7 @@ async def processed_load_youtube_file(
                 message_id=download_message.message_id, )
 
             # Start pipline process
+
             await process_queue.income_items_queue.put(pipline_object)
             await state.set_state(FSMSummaryFromAudioScenario.get_result)
             # Переход в новый стату вызов функции явно
@@ -179,14 +188,9 @@ async def processed_load_youtube_file(
                 user_balance_repo=user_balance_repo,
                 document_repository=document_repository,
             )
-            progres_bar_duration = await estimate_transcribe_duration(seconds=file_duration)
-            await progress_bar.start(
-                chat_id=message.from_user.id,
-                time=progres_bar_duration,
-                process_name="Извлекаю текст ... ",
-                bot_token=bot.token
-            )
+
         else:
+            #TODO вынести функцию котрая делает raise
             keyboard = crete_inline_keyboard_payed()
 
             await message.bot.send_message(
@@ -327,7 +331,8 @@ async def processed_do_ai_conversation(
         chat_id=transcribed_text_data.telegram_message.from_user.id,
         time=predicted_duration_for_summary,
         process_name="написание саммари",
-        bot_token=bot.token
+        bot_token=bot.token,
+        server_route = config_data.telegram_server.URI
     )
     result: PipelineData = await process_queue.result_dispatching_queue.get()
     process_queue.result_dispatching_queue.task_done()
