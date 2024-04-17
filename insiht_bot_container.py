@@ -65,7 +65,6 @@ tokenizer = TextTokenizer()
 
 # ______POST-PROCESSOR____________________________________________
 whisper_post_processor = PostProcessor()
-
 # ______FILE_MANAGERS____________________________________________
 file_format_manager = TelegramServerFileFormatDefiner()
 server_file_manager = TelegramMediaFileManager()
