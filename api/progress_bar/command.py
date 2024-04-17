@@ -7,13 +7,17 @@ class ProgressBarClient:
     def __init__(self):
         self.server_url = self.__load_server_url()
 
-    async def start(self, chat_id: int, time: int, process_name: str, bot_token: str):
-        data = {"chat_id": chat_id, "time": time, "process_name": process_name, 'bot_token': bot_token}
+    async def start(self, chat_id: int, time: int, process_name: str, bot_token: str, server_route:str):
+        data = {"chat_id": chat_id, "time": time, "process_name": process_name, "bot_token": bot_token,"server_route":server_route}
+        print()
         async with aiohttp.ClientSession() as session:
+            print()
             try:
                 async with session.post(f"{self.server_url}/start", json=data) as response:
+                    print()
                     return await response.json()
             except ClientConnectorError:
+                print()
                 return 500
 
     async def stop(self, chat_id: int):

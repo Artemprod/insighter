@@ -10,6 +10,7 @@ from config.bot_configs import Config
 from DB.Mongo.mongo_db import UserDocsRepoORM
 from enteties.pipline_data import PipelineData
 from enteties.queue_entity import PipelineQueues
+from insiht_bot_container import config_data
 from lexicon.LEXICON_RU import LEXICON_RU
 from logging_module.log_config import insighter_logger
 from main_process.ChatGPT.gpt_dispatcher import GPTDispatcher
@@ -65,12 +66,15 @@ class ProcesQueuePipline:
         file_duration = data.file_duration
         try:
             progres_bar_duration = await estimate_transcribe_duration(seconds=file_duration)
+            print()
             await self.progress_bar.start(
                 chat_id=message.from_user.id,
                 time=progres_bar_duration,
                 process_name="распознавание файла ...",
-                bot_token=data.telegram_bot.token
+                bot_token=data.telegram_bot.token,
+                server_route=config_data.telegram_server.URI
             )
+            print()
             await invoke_text_queue.put(data)
             income_items_queue.task_done()
             document_id: str = await self.__database_document_repository.create_new_doc(
