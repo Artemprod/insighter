@@ -315,28 +315,18 @@ async def processed_do_ai_conversation(
             content=transcribed_text_data.transcribed_text,
             message_event=message,
         )
-
+        await progress_bar.stop(chat_id=transcribed_text_data.telegram_message.from_user.id)
         await bot.send_document(
             chat_id=transcribed_text_data.telegram_message.chat.id,
             document=BufferedInputFile(file=file_in_memory, filename=file_name),
             caption=LEXICON_RU.get("transcribed_document_caption"),
         )
-        await progress_bar.stop(chat_id=transcribed_text_data.telegram_message.from_user.id)
+
         process_queue.transcribed_text_sender_queue.task_done()
-    predicted_duration_for_summary = await estimate_gen_summary_duration(text=transcribed_text_data.transcribed_text)
-
-    await asyncio.create_task(progress_bar.start(
-        chat_id=transcribed_text_data.telegram_message.from_user.id,
-        time=predicted_duration_for_summary,
-        process_name="написание саммари",
-        bot_token=bot.token,
-        server_route=config_data.telegram_server.URI
-    ))
     result: PipelineData = await process_queue.result_dispatching_queue.get()
-
     process_queue.result_dispatching_queue.task_done()
-
     if result.summary_text:
+
         await progress_bar.stop(chat_id=result.telegram_message.from_user.id)
         await user_repository.delete_one_attempt(tg_id=result.telegram_message.from_user.id)
         await bot.send_message(chat_id=result.telegram_message.chat.id, text=result.summary_text)
