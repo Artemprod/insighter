@@ -74,7 +74,7 @@ class ProcesQueuePipline:
                 bot_token=data.telegram_bot.token,
                 server_route=config_data.telegram_server.URI
             )
-            print()
+
             await invoke_text_queue.put(data)
             income_items_queue.task_done()
             document_id: str = await self.__database_document_repository.create_new_doc(
@@ -215,15 +215,16 @@ class ProcesQueuePipline:
                             "cant save summary text in database",
                             self.__dict__,
                         )
+
                         await self.progress_bar.stop(chat_id=data.telegram_message.from_user.id)
                     finally:
-                        await result_dispatching_queue.put(data)
-                        gen_answer_queue.task_done()
                         data.process_time["generate_summary_answer"]["finished_time"] = time.time()
                         data.process_time["generate_summary_answer"]["total_time"] = (
                             data.process_time["generate_summary_answer"]["finished_time"]
                             - data.process_time["generate_summary_answer"]["start_time"]
                         )
+                        await result_dispatching_queue.put(data)
+                        gen_answer_queue.task_done()
                 else:
                     insighter_logger.exception("No summary")
                     await data.fsm_bot_state.set_state(FSMSummaryFromAudioScenario.load_file)

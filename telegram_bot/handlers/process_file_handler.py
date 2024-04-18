@@ -118,35 +118,49 @@ async def processed_load_youtube_file(
 ):
     income_text = message.text
     is_youtube = await validate_youtube_url(income_text)
+    data = await state.get_data()
+    assistant_id = data.get("assistant_id")
+    instruction_message_id = int(data.get("instruction_message_id"))
     # TODO if not is_youtube лучше обрезать ветку которая не нужна ( если это это какая то простая валидция то быстро) (Сделать все валидации вверху ретернами )
-    if is_youtube:
-        data = await state.get_data()
-        assistant_id = data.get("assistant_id")
-        instruction_message_id = int(data.get("instruction_message_id"))
-# TODO не понятно что это такое называй таску очивидно а если не испольуешт то зачем сохрантья неймниг должен быть четким семантика должна сохраниться
+    if not is_youtube:
+        await message.answer(text=LEXICON_RU["is_not_youtube_link"].format(link=income_text))
+    else:
+        # TODO не понятно что это такое называй таску очивидно а если не испольуешт то зачем сохрантья неймниг должен быть четким семантика должна сохраниться
         duration = asyncio.create_task(get_youtube_audio_duration(url=income_text))
         file_duration = await duration
-
         checking = await compare_user_minutes_and_file(
             user_tg_id=message.from_user.id,
             file_duration=file_duration,
             user_balance_repo=user_balance_repo,
         )
 
-        #TODO Негативный кейс вынести вверх
+        # TODO Негативный кейс вынести вверх
         # TODO вынести в отдельную функцю обе части логики ( permisson )
-        if checking >= 0:
+        if checking <= 0:
+            # TODO вынести функцию котрая делает raise
+            keyboard = crete_inline_keyboard_payed()
+
+            await message.bot.send_message(
+                chat_id=message.chat.id,
+                text=TIME_ERROR_MESSAGE.format(time=await seconds_to_min_sec(abs(checking))),
+            )
+            await message.answer_contact(
+                phone_number="+79896186869",
+                first_name="Александр",
+                last_name="Чернышов",
+                reply_markup=keyboard,
+            )
+
+        else:
             download_message = await message.answer(text="Скачиваю видео ...")
-            #TODO Вынести в конфиг энв фалйл только
+            # TODO Вынести в конфиг энв фалйл только
             # path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
             #                                                            path=f"/var/lib/docker/volumes/insighter_ai_shared_volume/_data/{bot.token}/music/"))
 
             path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
-                                                                        path=r"D:\projects\AIPO\insighter_ai\insighter\main_process\temp"))
-
+                                                                       path=r"D:\projects\AIPO\insighter_ai\insighter\main_process\temp"))
 
             file_path = await path_to_video
-            # await check_if_i_can_load()
             # TODO не очивидн что делает кусок стейта
             if instruction_message_id:
                 try:
@@ -188,23 +202,6 @@ async def processed_load_youtube_file(
                 user_balance_repo=user_balance_repo,
                 document_repository=document_repository,
             )
-
-        else:
-            #TODO вынести функцию котрая делает raise
-            keyboard = crete_inline_keyboard_payed()
-
-            await message.bot.send_message(
-                chat_id=message.chat.id,
-                text=TIME_ERROR_MESSAGE.format(time=await seconds_to_min_sec(abs(checking))),
-            )
-            await message.answer_contact(
-                phone_number="+79896186869",
-                first_name="Александр",
-                last_name="Чернышов",
-                reply_markup=keyboard,
-            )
-    else:
-        await message.answer(text=LEXICON_RU["is_not_youtube_link"].format(link=income_text))
 
 
 @router.message(
@@ -327,15 +324,18 @@ async def processed_do_ai_conversation(
         await progress_bar.stop(chat_id=transcribed_text_data.telegram_message.from_user.id)
         process_queue.transcribed_text_sender_queue.task_done()
     predicted_duration_for_summary = await estimate_gen_summary_duration(text=transcribed_text_data.transcribed_text)
-    await progress_bar.start(
+
+    await asyncio.create_task(progress_bar.start(
         chat_id=transcribed_text_data.telegram_message.from_user.id,
         time=predicted_duration_for_summary,
         process_name="написание саммари",
         bot_token=bot.token,
-        server_route = config_data.telegram_server.URI
-    )
+        server_route=config_data.telegram_server.URI
+    ))
     result: PipelineData = await process_queue.result_dispatching_queue.get()
+
     process_queue.result_dispatching_queue.task_done()
+
     if result.summary_text:
         await progress_bar.stop(chat_id=result.telegram_message.from_user.id)
         await user_repository.delete_one_attempt(tg_id=result.telegram_message.from_user.id)
