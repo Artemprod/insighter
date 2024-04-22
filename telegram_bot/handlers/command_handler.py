@@ -15,6 +15,8 @@ from DB.Mongo.mongo_db import (
     MongoUserRepoORM,
     UserBalanceRepoORM,
 )
+from analitics.events import EventsNames
+from analitics.mixpanel_system.mixpanel_tracker import MixpanelAnalyticsSystem, UserEvent, BaseEvent
 from lexicon.LEXICON_RU import LEXICON_RU
 from telegram_bot.keyboards.inline_keyboards import (
     crete_inline_keyboard_assistants,
@@ -29,11 +31,13 @@ router = Router()
 
 @router.message(CommandStart())
 async def process_start_command(
-    message: Message,
-    assistant_repository: MongoAssistantRepositoryORM,
-    user_repository: MongoUserRepoORM,
-    state: FSMContext,
-    user_balance_repo: UserBalanceRepoORM,
+        message: Message,
+        assistant_repository: MongoAssistantRepositoryORM,
+        user_repository: MongoUserRepoORM,
+        state: FSMContext,
+        user_balance_repo: UserBalanceRepoORM,
+        mixpanel_tracker: MixpanelAnalyticsSystem,
+
 ):
     await state.clear()
     if not await user_repository.check_user_in_db(tg_id=message.from_user.id):
@@ -46,14 +50,23 @@ async def process_start_command(
             tg_id=message.from_user.id,
             tg_link=tg_link,
         )
+        mixpanel_tracker.register_new_user(user=UserEvent(user_id=message.from_user.id,
+                                                          first_name=message.from_user.first_name,
+                                                          last_name=message.from_user.last_name,
+                                                          tg_link=tg_link,
+                                                          other_properties=None))
+        mixpanel_tracker.send_event(
+            event=BaseEvent(user_id=message.from_user.id, event_name=EventsNames.REGISTRATION.value))
+
     time_left = await user_balance_repo.get_user_time_balance(tg_id=message.from_user.id)
     assistant_keyboard = crete_inline_keyboard_assistants(assistant_repository, user_tg_id=message.from_user.id)
-
     await message.answer(
         text=f"{LEXICON_RU['description']}\n\n<b>Осталось минут: "
              f"{await seconds_to_min_sec(time_left)}</b> \n\n{LEXICON_RU['next']} ",
         reply_markup=assistant_keyboard,
     )
+    mixpanel_tracker.send_event(event=BaseEvent(user_id=message.from_user.id, event_name=EventsNames.START_COMMAND.value))
+
 
 
 @router.message(Command(BotCommand(command="feedback", description="Оставить отзыв")))
@@ -140,10 +153,10 @@ async def pay_handler(message: Message):
 
 @router.callback_query(F.data == "payed")
 async def process_payed(
-    callback: CallbackQuery,
-    assistant_repository: MongoAssistantRepositoryORM,
-    user_repository: MongoUserRepoORM,
-    user_balance_repo: UserBalanceRepoORM,
+        callback: CallbackQuery,
+        assistant_repository: MongoAssistantRepositoryORM,
+        user_repository: MongoUserRepoORM,
+        user_balance_repo: UserBalanceRepoORM,
 ):
     # attempts = await user_repository.get_user_attempts(tg_id=callback.from_user.id)
     time_left = await user_balance_repo.get_user_time_balance(tg_id=callback.from_user.id)
@@ -164,10 +177,10 @@ async def process_payed(
 
 @router.callback_query(F.data == "base")
 async def process_base_answer(
-    callback: CallbackQuery,
-    assistant_repository: MongoAssistantRepositoryORM,
-    user_repository: MongoUserRepoORM,
-    user_balance_repo: UserBalanceRepoORM,
+        callback: CallbackQuery,
+        assistant_repository: MongoAssistantRepositoryORM,
+        user_repository: MongoUserRepoORM,
+        user_balance_repo: UserBalanceRepoORM,
 ):
     # attempts = await user_repository.get_user_attempts(tg_id=callback.from_user.id)
     time_left = await user_balance_repo.get_user_time_balance(tg_id=callback.from_user.id)

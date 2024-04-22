@@ -38,6 +38,7 @@ langchain = "^0.1.13"
 mypy = "^1.9.0"
 pydantic-settings = "^2.2.1"
 pytube = "^15.0.0"
+mixpanel-py-async = "^0.3.0"
 
 
 

@@ -17,6 +17,9 @@ from DB.Mongo.mongo_db import (
     TransactionRepoORM,
     UserBalanceRepoORM,
 )
+from analitics.event_enteties import BaseEvent
+from analitics.events import EventsNames
+from analitics.mixpanel_system.mixpanel_tracker import MixpanelAnalyticsSystem
 from lexicon.LEXICON_RU import LEXICON_RU, MESSAGES, REFERRAL_MESSAGE, TARIFFS
 from logging_module.log_config import insighter_logger
 from telegram_bot.keyboards.inline_keyboards import crete_inline_keyboard_assistants
@@ -44,7 +47,8 @@ async def referral_payment_command(callback: CallbackQuery, bot: Bot, tariff_rep
 
 
 @router.callback_query(F.data == "pay_in_bot")
-async def process_buy_command(callback: CallbackQuery, bot: Bot, tariff_repository: TariffRepoORM):
+async def process_buy_command(callback: CallbackQuery, bot: Bot, tariff_repository: TariffRepoORM,
+                              mixpanel_tracker: MixpanelAnalyticsSystem):
     tariffs = {
         TARIFFS["base"]: await tariff_repository.get_base_tariff(),
         TARIFFS["standard"]: await tariff_repository.get_standard_tariff(),
@@ -98,6 +102,8 @@ async def process_buy_command(callback: CallbackQuery, bot: Bot, tariff_reposito
         start_parameter=MESSAGES["start_parameter"],
         payload=TARIFFS["premium"],
     )
+    mixpanel_tracker.send_event(
+        event=BaseEvent(user_id=callback.message.from_user.id, event_name=EventsNames.PAYMENT_SCENARIO_STARTED.value, ))
 
 
 @router.pre_checkout_query()
@@ -115,6 +121,7 @@ async def process_successful_payment(
     user_balance_repo: UserBalanceRepoORM,
     tariff_repository: TariffRepoORM,
     assistant_repository: MongoAssistantRepositoryORM,
+    mixpanel_tracker: MixpanelAnalyticsSystem
 ):
     insighter_logger.info("successful_payment:")
     successful_payment = message.successful_payment
@@ -160,3 +167,5 @@ async def process_successful_payment(
         message.chat.id,
         MESSAGES["successful_payment"].format(total_amount=total_amount, currency=currency),
     )
+    mixpanel_tracker.send_event(
+        event=BaseEvent(user_id=message.from_user.id, event_name=EventsNames.PAYMENT_COMPLETED.value, ))

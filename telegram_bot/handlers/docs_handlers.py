@@ -4,6 +4,9 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery
 
 from DB.Mongo.mongo_db import UserDocsRepoORM
+from analitics.event_enteties import BaseEvent
+from analitics.events import EventsNames
+from analitics.mixpanel_system.mixpanel_tracker import MixpanelAnalyticsSystem
 from lexicon.LEXICON_RU import LEXICON_RU
 from telegram_bot.keyboards.calback_factories import DocumentsCallbackFactory
 from telegram_bot.keyboards.inline_keyboards import (
@@ -20,7 +23,7 @@ class FSMGetMyDocs(StatesGroup):
 
 
 @router.callback_query(F.data == "my_docs")
-async def processed_show_my_docks(callback: CallbackQuery, state: FSMContext):
+async def processed_show_my_docks(callback: CallbackQuery, mixpanel_tracker: MixpanelAnalyticsSystem):
     keyboard = await create_inline_keyboard_show_docs(user_tg_id=callback.from_user.id)
     if callback.message.text:
         await callback.message.edit_text(
@@ -34,6 +37,8 @@ async def processed_show_my_docks(callback: CallbackQuery, state: FSMContext):
             reply_markup=keyboard,
         )
         await callback.answer()
+    mixpanel_tracker.send_event(
+        event=BaseEvent(user_id=callback.from_user.id, event_name=EventsNames.VIEWED_HISTORY.value))
 
 
 # Этот хэндлер будет срабатывать на нажатие инлайн-кнопки "вперед"
