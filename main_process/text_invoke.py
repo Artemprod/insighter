@@ -197,32 +197,3 @@ class TextInvokeFactory(ITextInvokeFactory):
 
  
 
-
-if __name__ == "__main__":
-    async def main():
-        ...
-        # pdf = PdfFileHandler()
-        # path_pdf = r"C:\Users\artem\Downloads\тестовый документ.pdf"
-        # result = await pdf.invoke_text(path_pdf)
-        # insighter_logger.info(result)
-        # video_path = r"C:\Users\artem\Downloads\День 0 C++ - Как я собираюсь готовится к собеседованию в Яндекс.mp4"
-        # trans = WhisperRecognitionAPI()
-        # result = await VideoFileHandler(trans).invoke_text(video_path)
-        # insighter_logger.info(result)
-        # txt = TxtFileHandler()
-        # text_path = r"C:\Users\artem\Downloads\Telegram Desktop\Промпт_для_исследования_Инсайтер.txt"
-        # result = await txt.invoke_text(text_path)
-        # insighter_logger.info(result)
-        # pdf = PdfFileHandler()
-        # text = TxtFileHandler()
-        # video = VideoFileHandler(ai_transcriber=WhisperRecognitionAPI())
-        # audio = AudioFileHandler(ai_transcriber=WhisperRecognitionAPI())
-        # foramt_def = TelegramServerFileFormatDefiner()
-        # factory = TextInvokeFactory(format_definer=foramt_def,
-        #                             pdf_handler=pdf,
-        #                             txt_handler=text,
-        #                             video_handler=video,
-        #                             audio_handler=audio)
-        # path_f = r"C:\Users\artem\Downloads\Telegram Desktop\ПЕРЕГОВОРНАЯ - Мерлин – 2024-01-23.ogg"
-        # invoker = await factory.create_invoker(file_path=path_f)
-    asyncio.run(main())

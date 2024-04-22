@@ -15,10 +15,9 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
-from api.gpt import GPTAPIrequest
+
 from costume_exceptions.system_exceptions import SystemTypeError
-from DB.Mongo.mongo_db import MongoAssistantRepositoryORM, UserBalanceRepoORM
-from DB.Mongo.mongo_enteties import Assistant
+from DB.Mongo.mongo_db import  UserBalanceRepoORM
 from enteties.pipline_data import PipelineData
 from insiht_bot_container import (
     config_data,
@@ -79,16 +78,6 @@ def ensure_directory_exists(path):
         insighter_logger.info(f"Каталог уже существует: {path}")
 
 
-async def load_assistant(
-        state: FSMContext,
-        gpt_assistant: GPTAPIrequest,
-        assistant_repository: MongoAssistantRepositoryORM,
-) -> GPTAPIrequest:
-    data = await state.get_data()
-    assistant_id = data.get("assistant_id")
-    asisitent_prompt: Assistant = await assistant_repository.get_one_assistant(assistant_id=assistant_id)
-    gpt_assistant.system_assistant = asisitent_prompt
-    return gpt_assistant
 
 
 async def gen_doc_file_path(media_folder: str, sub_folder: str, message_event: Message) -> str:

@@ -262,7 +262,6 @@ class ServerFileManager(MediaFileManager):
             local_file_path = ServerFileManager.local_file_path
             local_file_full_path = os.path.join(local_file_path, file_name)
             sftp = client.open_sftp()
-            print()
             sftp.get(server_file_path, local_file_full_path)
             sftp.close()
             return local_file_full_path
