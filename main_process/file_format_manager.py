@@ -10,6 +10,18 @@ from costume_exceptions.format_exceptions import UnknownFormatRecognitionError
 
 from logging_module.log_config import insighter_logger
 from main_process.func_decorators import ameasure_time
+import asyncio
+
+from abc import ABC, abstractmethod
+from os import path
+
+import filetype
+
+
+from costume_exceptions.format_exceptions import UnknownFormatRecognitionError
+
+from logging_module.log_config import insighter_logger
+from main_process.func_decorators import ameasure_time
 
 
 class FileFormatDefiner(ABC):
