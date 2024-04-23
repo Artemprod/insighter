@@ -56,6 +56,7 @@ class Config:
     redis_storage: RedisStorage
     telegram_server: TelegramServer
     system: SystemType
+    analytical_system_token: str
 
 
 def load_bot_config(path) -> Config:
@@ -73,6 +74,7 @@ def load_bot_config(path) -> Config:
     open_ai_key = OpenAIKEY(key=env("OPENAI_API_KEY"))
 
     return Config(
+        analytical_system_token=env("MIXPANEL"),
         system=SystemType(system_type=system_type),
         Bot=bot,
         ChatGPT=open_ai_key,

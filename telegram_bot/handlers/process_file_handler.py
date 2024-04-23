@@ -1,3 +1,4 @@
+import asyncio
 
 from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramBadRequest
@@ -5,6 +6,9 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, CallbackQuery, ContentType, Message
 from environs import Env
 
+from analitics.event_enteties import BaseEvent
+from analitics.events import EventsNames
+from analitics.mixpanel_system.mixpanel_tracker import MixpanelAnalyticsSystem
 from api.progress_bar.command import ProgressBarClient
 from DB.Mongo.mongo_db import (
     MongoAssistantRepositoryORM,
@@ -12,10 +16,12 @@ from DB.Mongo.mongo_db import (
     UserBalanceRepoORM,
     UserDocsRepoORM,
 )
+from insiht_bot_container import config_data
 from lexicon.LEXICON_RU import LEXICON_RU, TIME_ERROR_MESSAGE
 from logging_module.log_config import insighter_logger
 from main_process.ChatGPT.gpt_models_information import GPTModelManager
 from main_process.process_pipline import PipelineData, PipelineQueues
+from main_process.youtube_option.youtube_downloader import get_youtube_audio_duration, download_youtube_audio
 from telegram_bot.keyboards.calback_factories import AssistantCallbackFactory
 from telegram_bot.keyboards.inline_keyboards import (
     crete_inline_keyboard_assistants,
@@ -27,11 +33,10 @@ from telegram_bot.services.service_functions import (
     calculate_whisper_cost,
     compare_user_minutes_and_file,
     estimate_gen_summary_duration,
-    estimate_media_duration_in_minutes,
     format_filter,
     from_pipeline_data_object,
     generate_text_file,
-    seconds_to_min_sec,
+    seconds_to_min_sec, validate_youtube_url, estimate_media_duration, estimate_transcribe_duration,
 )
 from telegram_bot.states.summary_from_audio import FSMSummaryFromAudioScenario
 
@@ -43,11 +48,12 @@ env.read_env(".env")
 
 @router.callback_query(AssistantCallbackFactory.filter())
 async def processed_gen_answer(
-    callback: CallbackQuery,
-    callback_data: AssistantCallbackFactory,
-    state: FSMContext,
-    assistant_repository: MongoAssistantRepositoryORM,
-    user_repository: MongoUserRepoORM,
+        callback: CallbackQuery,
+        callback_data: AssistantCallbackFactory,
+        state: FSMContext,
+        assistant_repository: MongoAssistantRepositoryORM,
+        user_repository: MongoUserRepoORM,
+        mixpanel_tracker: MixpanelAnalyticsSystem
 ):
     # Проверяем, есть ли текст в сообщении
     if callback.message.text:
@@ -72,10 +78,17 @@ async def processed_gen_answer(
     await callback.answer()
 
 
+    mixpanel_tracker.send_event(
+        event=BaseEvent(user_id=callback.from_user.id, event_name=EventsNames.ASSISTANT_CHOSEN.value,
+                        properties={'assistant name': assistant_name,
+                                    'assistant id': callback_data.assistant_id}))
+
+
 @router.message(
     FSMSummaryFromAudioScenario.load_file,
     ~F.content_type.in_(
         {
+            ContentType.TEXT,
             ContentType.VOICE,
             ContentType.AUDIO,
             ContentType.VIDEO,
@@ -83,7 +96,7 @@ async def processed_gen_answer(
         }
     ),
 )
-async def wrong_file_format(message: Message, bot: Bot):
+async def wrong_file_format(message: Message, bot: Bot, mixpanel_tracker: MixpanelAnalyticsSystem, ):
     await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 
     await bot.send_message(
@@ -93,29 +106,151 @@ async def wrong_file_format(message: Message, bot: Bot):
             actual_formats=LEXICON_RU["actual_formats"],
         ),
     )
+    mixpanel_tracker.send_event(
+        event=BaseEvent(user_id=message.from_user.id, event_name=EventsNames.ERROR_RECEIVED.value,
+                        properties={'error': LEXICON_RU["wrong_format"].format(
+                            income_file_format=message.content_type,
+                            actual_formats=LEXICON_RU["actual_formats"])}))
 
 
 @router.message(
-    FSMSummaryFromAudioScenario.load_file,
-    F.content_type.in_(
-        {
-            ContentType.VOICE,
-            ContentType.AUDIO,
-            ContentType.VIDEO,
-            ContentType.DOCUMENT,
-        }
+    FSMSummaryFromAudioScenario.load_file, F.content_type.in_({
+        ContentType.TEXT,
+
+    }
+    ),
+)
+async def processed_load_youtube_file(
+        message: Message,
+        bot: Bot,
+        state: FSMContext,
+        assistant_repository: MongoAssistantRepositoryORM,
+        user_repository: MongoUserRepoORM,
+        progress_bar: ProgressBarClient,
+        process_queue: PipelineQueues,
+        user_balance_repo: UserBalanceRepoORM,
+        document_repository: UserDocsRepoORM,
+        mixpanel_tracker: MixpanelAnalyticsSystem,
+):
+    income_text = message.text
+    is_youtube = await validate_youtube_url(income_text)
+    data = await state.get_data()
+    assistant_id = data.get("assistant_id")
+    instruction_message_id = int(data.get("instruction_message_id"))
+    # TODO if not is_youtube лучше обрезать ветку которая не нужна ( если это это какая то простая валидция то быстро) (Сделать все валидации вверху ретернами )
+    if not is_youtube:
+        await message.answer(text=LEXICON_RU["is_not_youtube_link"].format(link=income_text))
+        mixpanel_tracker.send_event(
+            event=BaseEvent(user_id=message.from_user.id, event_name=EventsNames.ERROR_RECEIVED.value,
+                            properties={'error': 'wrong link format',
+                                        'url': income_text}))
+    else:
+        # TODO не понятно что это такое называй таску очивидно а если не испольуешт то зачем сохрантья неймниг должен быть четким семантика должна сохраниться
+        duration = asyncio.create_task(get_youtube_audio_duration(url=income_text))
+        file_duration = await duration
+        checking = await compare_user_minutes_and_file(
+            user_tg_id=message.from_user.id,
+            file_duration=file_duration,
+            user_balance_repo=user_balance_repo,
+        )
+
+        # TODO Негативный кейс вынести вверх
+        # TODO вынести в отдельную функцю обе части логики ( permisson )
+        if checking <= 0:
+            # TODO вынести функцию котрая делает raise
+            keyboard = crete_inline_keyboard_payed()
+
+            await message.bot.send_message(
+                chat_id=message.chat.id,
+                text=TIME_ERROR_MESSAGE.format(time=await seconds_to_min_sec(abs(checking))),
+            )
+            await message.answer_contact(
+                phone_number="+79896186869",
+                first_name="Александр",
+                last_name="Чернышов",
+                reply_markup=keyboard,
+            )
+            mixpanel_tracker.send_event(
+                event=BaseEvent(user_id=message.from_user.id, event_name=EventsNames.OUT_OF_FUNDS.value))
+
+        else:
+            download_message = await message.answer(text="Скачиваю видео ...")
+            # TODO Вынести в конфиг энв фалйл только
+            path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
+                                                                       path=f"/var/lib/docker/volumes/insighter_ai_shared_volume/_data/{bot.token}/music/"))
+
+            # path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
+            #                                                            path=r"D:\projects\AIPO\insighter_ai\insighter\main_process\temp"))
+
+            file_path = await path_to_video
+            # TODO не очивидн что делает кусок стейта
+            if instruction_message_id:
+                try:
+                    await bot.delete_message(
+                        chat_id=message.chat.id,
+                        message_id=instruction_message_id,
+                    )
+                except TelegramBadRequest as e:
+                    insighter_logger.exception(f"Ошибка при попытке удалить сообщение: {e}")
+            # Form data to summary pipline
+            pipline_object = await from_pipeline_data_object(
+                message=message,
+                bot=bot,
+                assistant_id=assistant_id,
+                fsm_state=state,
+                file_duration=file_duration,
+                file_path=file_path,
+                file_type='mp4',
+                additional_system_information=None,
+                additional_user_information=None,
+            )
+            await bot.delete_message(
+                chat_id=message.chat.id,
+                message_id=download_message.message_id, )
+
+            # Start pipline process
+
+            await process_queue.income_items_queue.put(pipline_object)
+            await state.set_state(FSMSummaryFromAudioScenario.get_result)
+            # Переход в новый стату вызов функции явно
+            await processed_do_ai_conversation(
+                message=message,
+                state=state,
+                user_repository=user_repository,
+                bot=bot,
+                assistant_repository=assistant_repository,
+                progress_bar=progress_bar,
+                process_queue=process_queue,
+                user_balance_repo=user_balance_repo,
+                document_repository=document_repository,
+                mixpanel_tracker=mixpanel_tracker
+            )
+            mixpanel_tracker.send_event(
+                event=BaseEvent(user_id=message.from_user.id, event_name=EventsNames.YOUTUBE_LINK_UPLOADED.value,
+                                properties={'video_duration': file_duration,
+                                            'url': income_text}))
+
+
+@router.message(
+    FSMSummaryFromAudioScenario.load_file, F.content_type.in_({
+        ContentType.VOICE,
+        ContentType.AUDIO,
+        ContentType.VIDEO,
+        ContentType.DOCUMENT,
+    }
     ),
 )
 async def processed_load_file(
-    message: Message,
-    bot: Bot,
-    state: FSMContext,
-    assistant_repository: MongoAssistantRepositoryORM,
-    user_repository: MongoUserRepoORM,
-    progress_bar: ProgressBarClient,
-    process_queue: PipelineQueues,
-    user_balance_repo: UserBalanceRepoORM,
-    document_repository: UserDocsRepoORM,
+        message: Message,
+        bot: Bot,
+        state: FSMContext,
+        assistant_repository: MongoAssistantRepositoryORM,
+        user_repository: MongoUserRepoORM,
+        progress_bar: ProgressBarClient,
+        process_queue: PipelineQueues,
+        user_balance_repo: UserBalanceRepoORM,
+        document_repository: UserDocsRepoORM,
+        mixpanel_tracker: MixpanelAnalyticsSystem,
 ):
     data = await state.get_data()
     assistant_id = data.get("assistant_id")
@@ -124,7 +259,7 @@ async def processed_load_file(
         file_data = await format_filter(message=message, bot=bot, state=state)
         if file_data:
             file_path, income_file_format = file_data
-            file_duration = await estimate_media_duration_in_minutes(bot=bot, message=message)
+            file_duration = await estimate_media_duration(bot=bot, message=message)
             # Проверяем есть ли минуты
             checking = await compare_user_minutes_and_file(
                 user_tg_id=message.from_user.id,
@@ -169,7 +304,14 @@ async def processed_load_file(
                     process_queue=process_queue,
                     user_balance_repo=user_balance_repo,
                     document_repository=document_repository,
+                    mixpanel_tracker=mixpanel_tracker
                 )
+                mixpanel_tracker.send_event(
+                    event=BaseEvent(user_id=message.from_user.id, event_name=EventsNames.FILE_UPLOADED.value,
+                                    properties={'file_duration': file_duration,
+                                                'file_format': income_file_format,
+                                                }))
+
             else:
                 keyboard = crete_inline_keyboard_payed()
 
@@ -183,24 +325,32 @@ async def processed_load_file(
                     last_name="Чернышов",
                     reply_markup=keyboard,
                 )
+                mixpanel_tracker.send_event(
+                    event=BaseEvent(user_id=message.from_user.id, event_name=EventsNames.OUT_OF_FUNDS.value))
+
     except Exception as e:
         insighter_logger.exception("Sommthing happend in defining format file ", e)
         await bot.delete_message(message_id=instruction_message_id, chat_id=message.chat.id)
         await bot.send_message(chat_id=message.chat.id, text=LEXICON_RU["error_message"])
         await state.set_state(FSMSummaryFromAudioScenario.load_file)
+        mixpanel_tracker.send_event(
+            event=BaseEvent(user_id=message.from_user.id, event_name=EventsNames.ERROR_RECEIVED.value,
+                            properties={'error': 'cant define format',
+                                        }))
 
 
 @router.message(FSMSummaryFromAudioScenario.get_result)
 async def processed_do_ai_conversation(
-    message: Message,
-    bot: Bot,
-    state: FSMContext,
-    assistant_repository: MongoAssistantRepositoryORM,
-    user_repository: MongoUserRepoORM,
-    progress_bar: ProgressBarClient,
-    process_queue: PipelineQueues,
-    user_balance_repo: UserBalanceRepoORM,
-    document_repository: UserDocsRepoORM,
+        message: Message,
+        bot: Bot,
+        state: FSMContext,
+        assistant_repository: MongoAssistantRepositoryORM,
+        user_repository: MongoUserRepoORM,
+        progress_bar: ProgressBarClient,
+        process_queue: PipelineQueues,
+        user_balance_repo: UserBalanceRepoORM,
+        document_repository: UserDocsRepoORM,
+        mixpanel_tracker: MixpanelAnalyticsSystem,
 ):
     transcribed_text_data: PipelineData = await process_queue.transcribed_text_sender_queue.get()
     if transcribed_text_data.transcribed_text:
@@ -208,20 +358,17 @@ async def processed_do_ai_conversation(
             content=transcribed_text_data.transcribed_text,
             message_event=message,
         )
-
+        await progress_bar.stop(chat_id=transcribed_text_data.telegram_message.from_user.id)
         await bot.send_document(
             chat_id=transcribed_text_data.telegram_message.chat.id,
             document=BufferedInputFile(file=file_in_memory, filename=file_name),
             caption=LEXICON_RU.get("transcribed_document_caption"),
         )
-        await progress_bar.stop(chat_id=transcribed_text_data.telegram_message.from_user.id)
+
         process_queue.transcribed_text_sender_queue.task_done()
-    predicted_duration_for_summary = await estimate_gen_summary_duration(text=transcribed_text_data.transcribed_text)
-    await progress_bar.start(
-        chat_id=transcribed_text_data.telegram_message.from_user.id,
-        time=predicted_duration_for_summary,
-        process_name="написание саммари",
-    )
+        mixpanel_tracker.send_event(
+            event=BaseEvent(user_id=transcribed_text_data.telegram_message.from_user.id,
+                            event_name=EventsNames.RECOGNIZED_TEXT_RECEIVED.value, ))
     result: PipelineData = await process_queue.result_dispatching_queue.get()
     process_queue.result_dispatching_queue.task_done()
     if result.summary_text:
@@ -277,3 +424,6 @@ async def processed_do_ai_conversation(
             info=meta_information,
         )
         await state.clear()
+        mixpanel_tracker.send_event(
+            event=BaseEvent(user_id=result.telegram_message.from_user.id,
+                            event_name=EventsNames.SUMMARY_RECEIVED.value, ))

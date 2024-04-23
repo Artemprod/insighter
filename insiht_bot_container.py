@@ -1,3 +1,4 @@
+from analitics.mixpanel_system.mixpanel_tracker import MixpanelAnalyticsSystem
 from api.progress_bar.command import ProgressBarClient
 from config.bot_configs import Config, load_bot_config
 from DB.Mongo.mongo_db import (
@@ -65,7 +66,6 @@ tokenizer = TextTokenizer()
 
 # ______POST-PROCESSOR____________________________________________
 whisper_post_processor = PostProcessor()
-
 # ______FILE_MANAGERS____________________________________________
 file_format_manager = TelegramServerFileFormatDefiner()
 server_file_manager = TelegramMediaFileManager()
@@ -127,9 +127,13 @@ text_invoker = TextInvokeFactory(
     audio_handler=audio_handler,
     formats=formats,
 )
+# ____ANALITIC INSTRUMENT____________________________________________
+mixpanel_tracker = MixpanelAnalyticsSystem(mixpanel_token=config_data.analytical_system_token)
+
 
 # ______PROCESS_PIPELINE____________________________________________
 
 
 # ____SERVER_CONNECTION____________________________________________
 # server_file_worker = ServerFileManager()
+

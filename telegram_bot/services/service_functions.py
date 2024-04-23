@@ -15,10 +15,9 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
-from api.gpt import GPTAPIrequest
+
 from costume_exceptions.system_exceptions import SystemTypeError
-from DB.Mongo.mongo_db import MongoAssistantRepositoryORM, UserBalanceRepoORM
-from DB.Mongo.mongo_enteties import Assistant
+from DB.Mongo.mongo_db import  UserBalanceRepoORM
 from enteties.pipline_data import PipelineData
 from insiht_bot_container import (
     config_data,
@@ -50,7 +49,7 @@ def get_relative_path(path):
     """
 
     parts = path.split("/")
-    return "/".join(parts[len(parts) - 1 :])
+    return "/".join(parts[len(parts) - 1:])
 
 
 async def get_media_file_path(user_media_dir: str, file_id: str, file_extension: str) -> str:
@@ -79,16 +78,6 @@ def ensure_directory_exists(path):
         insighter_logger.info(f"Каталог уже существует: {path}")
 
 
-async def load_assistant(
-    state: FSMContext,
-    gpt_assistant: GPTAPIrequest,
-    assistant_repository: MongoAssistantRepositoryORM,
-) -> GPTAPIrequest:
-    data = await state.get_data()
-    assistant_id = data.get("assistant_id")
-    asisitent_prompt: Assistant = await assistant_repository.get_one_assistant(assistant_id=assistant_id)
-    gpt_assistant.system_assistant = asisitent_prompt
-    return gpt_assistant
 
 
 async def gen_doc_file_path(media_folder: str, sub_folder: str, message_event: Message) -> str:
@@ -147,15 +136,15 @@ async def generate_text_file(content: str, message_event: Message) -> tuple:
 
 
 async def from_pipeline_data_object(
-    message: Message,
-    bot: Bot,
-    assistant_id: str,
-    fsm_state: FSMContext,
-    file_duration: float,
-    file_path: str,
-    file_type: str,
-    additional_system_information=None,
-    additional_user_information=None,
+        message: Message,
+        bot: Bot,
+        assistant_id: str,
+        fsm_state: FSMContext,
+        file_duration: float,
+        file_path: str,
+        file_type: str,
+        additional_system_information=None,
+        additional_user_information=None,
 ) -> PipelineData:
     """
     Creates a PipelineData object from the provided inputs.
@@ -195,40 +184,10 @@ async def form_content(summary: str, transcribed_text: str) -> str:
     return f"Самари:\n {summary} \n\n Транскрибация аудио:\n {transcribed_text}"
 
 
-async def estimate_transcribe_duration(message: Message):
-    media = message.content_type
-
-    async def estimate_download_file_duration(media_type) -> float:
-        file_size = media_type.file_size / (1024 * 1024)
-        second_per_mb = 4 if file_size > 30 else 4
-        return file_size * second_per_mb if file_size > 0 else file_size * second_per_mb
-
-    async def estimate_transcribe_file_duration(media_type) -> float:
-        second_per_second = 12
-        prediction = media_type.duration / second_per_second
-        return prediction
-
-    if media == "document":
-        download_file_duration = await estimate_download_file_duration(media_type=message.document)
-        return int((download_file_duration + 6))
-
-    elif media == "music" or media == "audio":
-        download_file_duration = await estimate_download_file_duration(media_type=message.audio)
-        transcribe_duration = await estimate_transcribe_file_duration(media_type=message.audio)
-        return int((download_file_duration + transcribe_duration + 6))
-
-    elif media == "voice":
-        download_file_duration = await estimate_download_file_duration(media_type=message.voice)
-        transcribe_duration = await estimate_transcribe_file_duration(media_type=message.voice)
-        return int((download_file_duration + transcribe_duration + 6))
-
-    elif media == "video":
-        download_file_duration = await estimate_download_file_duration(media_type=message.video)
-        transcribe_duration = await estimate_transcribe_file_duration(media_type=message.video)
- 
-        return int((download_file_duration + transcribe_duration + 6))
-    else:
-        pass
+async def estimate_transcribe_duration(seconds):
+    second_per_second = 12
+    prediction = seconds / second_per_second
+    return round(prediction)
 
 
 async def compare_user_minutes_and_file(user_tg_id, file_duration, user_balance_repo: UserBalanceRepoORM):
@@ -236,7 +195,7 @@ async def compare_user_minutes_and_file(user_tg_id, file_duration, user_balance_
     return user_time_balance - file_duration
 
 
-async def estimate_media_duration_in_minutes(bot: Bot, message: Message):
+async def estimate_media_duration(bot: Bot, message: Message):
     file_path_coro = None
     system_type = config_data.system.system_type
     if system_type == "docker":
@@ -296,8 +255,6 @@ async def num_tokens_from_string(string: str, encoding_name: str = "cl100k_base"
         return num_tokens
     except Exception as e:
         insighter_logger.exception(e)
-
-
 
 
 async def get_openai_model_cost_table(model_name="gpt-3.5-turbo", is_completion=False):
@@ -437,3 +394,12 @@ async def format_filter(message, bot, state):
         await state.set_state(FSMSummaryFromAudioScenario.load_file)
 
 
+async def validate_youtube_url(url):
+    # Шаблоны URL, которые поддерживают список видео, короткие ссылки и стандартные ссылки
+    youtube_regex = (
+        r'(https?://)?(www\.)?'
+        '(youtube|youtu|youtube-nocookie)\.(com|be)/'
+        '(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'  # YouTube видео всегда имеют 11-значный ID
+    )
+
+    return bool(re.match(youtube_regex, url))

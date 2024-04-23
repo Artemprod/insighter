@@ -25,7 +25,7 @@ from insiht_bot_container import (
     transaction_repository,
     user_balance_repo,
     user_repository,
-    whisper_post_processor,
+    whisper_post_processor, mixpanel_tracker,
 )
 from logging_module.log_config import insighter_logger
 from main_process.process_pipline import ProcesQueuePipline
@@ -52,6 +52,7 @@ async def create_bot(queue_pipeline) -> None:
             user_balance_repo=user_balance_repo,
             transaction_repository=transaction_repository,
             tariff_repository=tariff_repository,
+            mixpanel_tracker=mixpanel_tracker
         )
         insighter_logger.info("local system initialized")
 
@@ -72,6 +73,7 @@ async def create_bot(queue_pipeline) -> None:
             user_balance_repo=user_balance_repo,
             transaction_repository=transaction_repository,
             tariff_repository=tariff_repository,
+            mixpanel_tracker=mixpanel_tracker
         )
         insighter_logger.info("docker system initialized")
     bot: Bot = Bot(token=config.Bot.tg_bot_token,

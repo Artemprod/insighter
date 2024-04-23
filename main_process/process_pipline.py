@@ -10,6 +10,7 @@ from config.bot_configs import Config
 from DB.Mongo.mongo_db import UserDocsRepoORM
 from enteties.pipline_data import PipelineData
 from enteties.queue_entity import PipelineQueues
+from insiht_bot_container import config_data
 from lexicon.LEXICON_RU import LEXICON_RU
 from logging_module.log_config import insighter_logger
 from main_process.ChatGPT.gpt_dispatcher import GPTDispatcher
@@ -17,7 +18,7 @@ from main_process.file_format_manager import FileFormatDefiner
 from main_process.file_manager import TelegramMediaFileManager
 from main_process.post_ptocessing import PostProcessor
 from main_process.text_invoke import TextInvokeFactory
-from telegram_bot.services.service_functions import estimate_transcribe_duration
+from telegram_bot.services.service_functions import estimate_transcribe_duration, estimate_gen_summary_duration
 from telegram_bot.states.summary_from_audio import FSMSummaryFromAudioScenario
 
 
@@ -62,18 +63,8 @@ class ProcesQueuePipline:
         data.process_time["produce_file_path"]["start_time"] = time.time()
         insighter_logger.info("запуск в пайплане первый воркер", data)
         message: aiogram.types.Message = data.telegram_message
-
+        file_duration = data.file_duration
         try:
-            progres_bar_duration = await estimate_transcribe_duration(message=message)
-            if progres_bar_duration is not None:
-                await self.progress_bar.start(
-                    chat_id=message.from_user.id,
-                    time=progres_bar_duration,
-                    process_name="распознавание файла ...",
-                )
-
-            await invoke_text_queue.put(data)
-            income_items_queue.task_done()
             document_id: str = await self.__database_document_repository.create_new_doc(
                 tg_id=data.telegram_message.from_user.id
             )
@@ -84,6 +75,17 @@ class ProcesQueuePipline:
                 data.process_time["produce_file_path"]["finished_time"]
                 - data.process_time["produce_file_path"]["start_time"]
             )
+            await invoke_text_queue.put(data)
+            income_items_queue.task_done()
+
+            progres_bar_duration = await estimate_transcribe_duration(seconds=file_duration)
+            await asyncio.create_task(self.progress_bar.start(
+                chat_id=message.from_user.id,
+                time=progres_bar_duration,
+                process_name="распознавание файла ...",
+                bot_token=data.telegram_bot.token,
+                server_route=config_data.telegram_server.URI
+            ))
 
         except Exception as e:
             await data.telegram_bot.send_message(
@@ -190,6 +192,16 @@ class ProcesQueuePipline:
             insighter_logger.info(f"Получил данные для генерации текста {data}")
 
             text_to_summary = data.transcribed_text
+            predicted_duration_for_summary = await estimate_gen_summary_duration(
+                text=text_to_summary)
+
+            progres_task = asyncio.create_task(self.progress_bar.start(
+                chat_id=data.telegram_message.from_user.id,
+                time=predicted_duration_for_summary,
+                process_name="Пишу саммари",
+                bot_token=data.telegram_bot.token,
+                server_route=config_data.telegram_server.URI
+            ))
             if text_to_summary:
                 summary = await self.__ai_llm_request.compile_request(
                     assistant_id=data.assistant_id,
@@ -212,15 +224,17 @@ class ProcesQueuePipline:
                             "cant save summary text in database",
                             self.__dict__,
                         )
+
                         await self.progress_bar.stop(chat_id=data.telegram_message.from_user.id)
                     finally:
-                        await result_dispatching_queue.put(data)
-                        gen_answer_queue.task_done()
                         data.process_time["generate_summary_answer"]["finished_time"] = time.time()
                         data.process_time["generate_summary_answer"]["total_time"] = (
                             data.process_time["generate_summary_answer"]["finished_time"]
                             - data.process_time["generate_summary_answer"]["start_time"]
                         )
+                        await result_dispatching_queue.put(data)
+                        gen_answer_queue.task_done()
+                        await progres_task
                 else:
                     insighter_logger.exception("No summary")
                     await data.fsm_bot_state.set_state(FSMSummaryFromAudioScenario.load_file)
