@@ -1,35 +1,35 @@
-import asyncio
+
 import datetime
 import hashlib
 import os
 import random
 
-from environs import Env
-from mongoengine import connect
 
-from config.bot_configs import MongoDB
+from mongoengine import connect
 from DB.Mongo.mongo_enteties import Assistant, Tariff, Transactions, User
-from lexicon.LEXICON_RU import TARIFFS
+from config.config_file import MongoDBConfigs
 from logging_module.log_config import insighter_logger
+from lexicon.LEXICON_RU import TARIFFS
+
 
 
 class MongoORMConnection:
     def __init__(self,
-                 mongo,
+                 mongo:MongoDBConfigs,
                  system_type):
         if system_type == "local":
             connect(
-                db=mongo.bd_name,
-                host=mongo.local_host,
-                port=int(mongo.local_port),
+                db=mongo.database,
+                host=mongo.mongo_db_local_host,
+                port=int(mongo.mongo_db_local_port),
             )
         elif system_type == "docker":
             connect(
-                username=mongo.db_user_name,
-                password=mongo.db_password,
-                db=mongo.bd_name,
-                host=mongo.docker_host,
-                port=int(mongo.local_port),
+                username=mongo.mongo_username,
+                password=mongo.mongo_password,
+                db=mongo.database,
+                host=mongo.mongo_db_docker_host,
+                port=int(mongo.mongo_db_docker_port),
             )
 
 # TODO переписать все асинхронно с использованием асинхронной библиотекк mongoengine
@@ -457,29 +457,4 @@ class TransactionRepoORM:
             insighter_logger.exception(f"failed to save transaction {e}")
             raise e
 
-
-if __name__ == "__main__":
-
-    async def main():
-        env: Env = Env()
-        env.read_env(".env")
-
-        bd = MongoDB(
-            bd_name=env("DATABASE"),
-            local_port=env("MONGO_DB_LOCAL_PORT"),
-            local_host=env("MONGO_DB_LOCAL_HOST"),
-            docker_port=(env("MONGO_DB_DOCKER_PORT")),
-            docker_host=(env("MONGO_DB_DOCKER_HOST")),
-        )
-        MongoORMConnection(bd, system_type="local")
-        # a = TariffRepoORM()
-        # await a.add_new_tariff(
-        #     tariff_name='base',
-        #     label='Базовый тариф',
-        #     price=990,
-        #     minutes=200,
-        #     currency='RUB',
-        # )
-
-    asyncio.run(main())
 

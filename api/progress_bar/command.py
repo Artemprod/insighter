@@ -1,11 +1,14 @@
 import aiohttp
 from aiohttp import ClientConnectorError
-from environs import Env
+
+from config.config_file import ProjectSettings
+
 
 
 class ProgressBarClient:
-    def __init__(self):
-        self.server_url = self.__load_server_url()
+    def __init__(self, server_url):
+        self.server_url = server_url
+
 
     async def start(self, chat_id: int, time: int, process_name: str, bot_token: str, server_route:str):
         data = {"chat_id": chat_id, "time": time, "process_name": process_name, "bot_token": bot_token,"server_route":server_route}
@@ -27,8 +30,4 @@ class ProgressBarClient:
             except ClientConnectorError:
                 return 500
 
-    @staticmethod
-    def __load_server_url():
-        env = Env()
-        env.read_env()
-        return env("PROGRESS_BAR_SERVER_URL")
+

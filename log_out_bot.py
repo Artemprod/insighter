@@ -2,13 +2,15 @@ import asyncio
 
 from aiogram import Bot
 
-from insiht_bot_container import config_data
+from settings import project_settings
 from logging_module.log_config import insighter_logger
 
 
+
+
+
 async def logout_bot():
-    config = config_data
-    bot = Bot(token=config.Bot.tg_bot_token)
+    bot = Bot(token=project_settings.telegram_bot_token)
     try:
         await bot.log_out()
         insighter_logger.info("Бот успешно отключен от официального сервера Telegram.")

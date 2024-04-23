@@ -20,10 +20,10 @@ from costume_exceptions.system_exceptions import SystemTypeError
 from DB.Mongo.mongo_db import  UserBalanceRepoORM
 from enteties.pipline_data import PipelineData
 from insiht_bot_container import (
-    config_data,
+
     file_format_manager,
     server_file_manager,
-    text_invoker,
+    text_invoker, project_settings,
 )
 from lexicon.LEXICON_RU import LEXICON_RU
 from logging_module.log_config import insighter_logger
@@ -197,7 +197,7 @@ async def compare_user_minutes_and_file(user_tg_id, file_duration, user_balance_
 
 async def estimate_media_duration(bot: Bot, message: Message):
     file_path_coro = None
-    system_type = config_data.system.system_type
+    system_type = project_settings.system
     if system_type == "docker":
         file_path_coro = server_file_manager.get_media_file(message=message, bot=bot)
     elif system_type == "local":
@@ -348,7 +348,7 @@ async def calculate_whisper_cost(duration_sec, model="base", quality="standard")
 
 
 async def format_filter(message, bot, state):
-    system = config_data.system.system_type
+    system = project_settings.system
     insighter_logger.info(system)
     if system == "docker":
         file_path_coro = server_file_manager.get_media_file(message=message, bot=bot)
@@ -398,8 +398,8 @@ async def validate_youtube_url(url):
     # Шаблоны URL, которые поддерживают список видео, короткие ссылки и стандартные ссылки
     youtube_regex = (
         r'(https?://)?(www\.)?'
-        '(youtube|youtu|youtube-nocookie)\.(com|be)/'
-        '(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'  # YouTube видео всегда имеют 11-значный ID
+        r'(youtube|youtu|youtube-nocookie)\.(com|be)/'
+        r'(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'  # YouTube видео всегда имеют 11-значный ID
     )
 
     return bool(re.match(youtube_regex, url))

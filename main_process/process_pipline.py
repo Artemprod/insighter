@@ -8,11 +8,13 @@ from aiofiles import os as asyncos
 from api.progress_bar.command import ProgressBarClient
 from config.bot_configs import Config
 from DB.Mongo.mongo_db import UserDocsRepoORM
+from config.config_file import ProjectSettings
 from enteties.pipline_data import PipelineData
 from enteties.queue_entity import PipelineQueues
-from insiht_bot_container import config_data
-from lexicon.LEXICON_RU import LEXICON_RU
 from logging_module.log_config import insighter_logger
+
+from lexicon.LEXICON_RU import LEXICON_RU
+
 from main_process.ChatGPT.gpt_dispatcher import GPTDispatcher
 from main_process.file_format_manager import FileFormatDefiner
 from main_process.file_manager import TelegramMediaFileManager
@@ -34,7 +36,7 @@ class ProcesQueuePipline:
         format_definer: FileFormatDefiner,
         progress_bar: ProgressBarClient,
         ai_llm_request: GPTDispatcher,
-        config_data: Config,
+        config_data: ProjectSettings
     ):
         self.__database_document_repository = database_document_repository
         self.__server_file_manager = server_file_manager
@@ -84,7 +86,7 @@ class ProcesQueuePipline:
                 time=progres_bar_duration,
                 process_name="распознавание файла ...",
                 bot_token=data.telegram_bot.token,
-                server_route=config_data.telegram_server.URI
+                server_route=self.__config_data.docker_telegram_server
             ))
 
         except Exception as e:
@@ -200,7 +202,7 @@ class ProcesQueuePipline:
                 time=predicted_duration_for_summary,
                 process_name="Пишу саммари",
                 bot_token=data.telegram_bot.token,
-                server_route=config_data.telegram_server.URI
+                server_route=self.__config_data.docker_telegram_server
             ))
             if text_to_summary:
                 summary = await self.__ai_llm_request.compile_request(

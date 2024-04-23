@@ -9,7 +9,7 @@ from aiogram.types import (
     Message,
     PreCheckoutQuery,
 )
-from environs import Env
+
 
 from DB.Mongo.mongo_db import (
     MongoAssistantRepositoryORM,
@@ -20,6 +20,7 @@ from DB.Mongo.mongo_db import (
 from analitics.event_enteties import BaseEvent
 from analitics.events import EventsNames
 from analitics.mixpanel_system.mixpanel_tracker import MixpanelAnalyticsSystem
+from settings import project_settings
 from lexicon.LEXICON_RU import LEXICON_RU, MESSAGES, REFERRAL_MESSAGE, TARIFFS
 from logging_module.log_config import insighter_logger
 from telegram_bot.keyboards.inline_keyboards import crete_inline_keyboard_assistants
@@ -27,9 +28,7 @@ from telegram_bot.services.service_functions import seconds_to_min_sec
 
 # Повесить мидлварь только на этот роутер
 router = Router()
-env: Env = Env()
-env.read_env(".env")
-PAYMENTS_PROVIDER_TOKEN = env("PAYMENTS_PROVIDER_TOKEN")
+PAYMENTS_PROVIDER_TOKEN = project_settings.payment_configs.payments_provider_token
 
 
 # Вход в состояне покупки

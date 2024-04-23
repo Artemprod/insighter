@@ -3,6 +3,8 @@ from typing import Union
 
 from environs import Env
 
+from settings import project_settings
+
 
 @dataclass
 class SystemType:
@@ -62,14 +64,14 @@ class Config:
 def load_bot_config(path) -> Config:
     env: Env = Env()
     env.read_env(path)
-    system_type = env("SYSTEM")
+    system_type = project_settings.system
     bot = None
     if system_type == "local":
-        bot = TelegramBot(tg_bot_token=env("TEST_TELEGRAM_BOT_TOKEN"))
+        bot = TelegramBot(tg_bot_token=project_settings.test_telegram_bot_token)
     elif system_type == "docker":
-        bot = TelegramBot(tg_bot_token=env("TELEGRAM_BOT_TOKEN"))
+        bot = TelegramBot(tg_bot_token=project_settings.telegram_bot_token)
     telegram_server = TelegramServer(
-        URI=env("DOCKER_TELEGRAM_SERVER"),
+        URI=project_settings.docker_telegram_server,
     )
     open_ai_key = OpenAIKEY(key=env("OPENAI_API_KEY"))
 

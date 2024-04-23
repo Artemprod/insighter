@@ -15,6 +15,9 @@ from costume_exceptions.path_exceptions import (
     TelegramServerVolumePathExistingError,
 )
 from logging_module.log_config import insighter_logger
+from settings import project_settings
+
+
 
 
 class IMediaFileManager(ABC):
@@ -130,13 +133,10 @@ class ServerFileManager(MediaFileManager):
 
     @classmethod
     def __bot_token(cls):
-        env: Env = Env()
-        env.read_env(".env")
-        system_type = env("SYSTEM")
-        if system_type == "local":
-            return env("TEST_TELEGRAM_BOT_TOKEN")
-        elif system_type == "docker":
-            return env("TELEGRAM_BOT_TOKEN")
+        if project_settings.system == "local":
+            return project_settings.test_telegram_bot_token
+        elif project_settings.system == "docker":
+            return project_settings.telegram_bot_token
 
     async def get_media_file(self, message: Message, bot: Bot) -> str:
         remote_file_path = await self.get_file(message, bot)
@@ -161,12 +161,10 @@ class ServerFileManager(MediaFileManager):
 
     @classmethod
     def __load_config(cls) -> Configs:
-        env: Env = Env()
-        env.read_env(".env")
         return cls.Configs(
-            hostname=env("REMOTE_SERVER_HOST"),
-            username=env("REMOTE_SERVER_USER_NAME"),
-            password=env("REMOTE_SERVER_PASSWORD"),
+            hostname=project_settings.remote_server.remote_server_host,
+            username=project_settings.remote_server.remote_server_user_name,
+            password=project_settings.remote_server.remote_server_password,
         )
 
     def __connect_server(self):

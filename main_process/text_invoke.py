@@ -7,12 +7,15 @@ from os import path
 
 import aiofiles
 import chardet
-from environs import Env
+
 from PyPDF2 import PdfReader
 
 from costume_exceptions.file_read_exceptions import UnknownPDFreadFileError
 from costume_exceptions.format_exceptions import EncodingDetectionError
 from logging_module.log_config import insighter_logger
+from settings import project_settings
+
+
 from main_process.file_format_manager import FileFormatDefiner
 from main_process.Whisper.whisper_dispatcher import MediaRecognitionFactory
 
@@ -135,14 +138,13 @@ class FORMATS:
         self.__load_formats_from_env()
 
     def __load_formats_from_env(self) -> None:
-        env: Env = Env()
-        env.read_env(".env")
-        self.VIDEO_FORMATS = env("VIDEO_FORMATS")
-        self.AUDIO_FORMATS = env("AUDIO_FORMATS")
-        if isinstance(env("VIDEO_FORMATS"), str):  # Проверка формата строки
-            self.VIDEO_FORMATS = env("VIDEO_FORMATS").split(",")
-        if isinstance(env("AUDIO_FORMATS"), str):
-            self.AUDIO_FORMATS = env("AUDIO_FORMATS").split(",")
+
+        self.VIDEO_FORMATS = project_settings.allowed_file_formats.video_formats
+        self.AUDIO_FORMATS = project_settings.allowed_file_formats.audio_formats
+        if isinstance(project_settings.allowed_file_formats.video_formats, str):  # Проверка формата строки
+            self.VIDEO_FORMATS = project_settings.allowed_file_formats.video_formats.split(",")
+        if isinstance(project_settings.allowed_file_formats.audio_formats, str):
+            self.AUDIO_FORMATS = project_settings.allowed_file_formats.audio_formats.split(",")
 
     def make_list_of_formats(self) -> list[str]:  # Указываем возвращаемый тип
         all_formats = self.VIDEO_FORMATS + self.AUDIO_FORMATS
@@ -151,13 +153,13 @@ class FORMATS:
 
 class TextInvokeFactory(ITextInvokeFactory):
     def __init__(
-        self,
-        format_definer: FileFormatDefiner,
-        pdf_handler: IPdfFileHandler,
-        txt_handler: ITxtFileHandler,
-        video_handler: IVideoFileHandler,
-        audio_handler: IAudioFileHandler,
-        formats: FORMATS,
+            self,
+            format_definer: FileFormatDefiner,
+            pdf_handler: IPdfFileHandler,
+            txt_handler: ITxtFileHandler,
+            video_handler: IVideoFileHandler,
+            audio_handler: IAudioFileHandler,
+            formats: FORMATS,
     ):
         self._format_definer = format_definer
         self._video_handler = video_handler
@@ -192,8 +194,3 @@ class TextInvokeFactory(ITextInvokeFactory):
             insighter_logger.exception(f"This file format {income_file_format} havent supported")
             raise EncodingDetectionError(f"This file format {income_file_format} havent supported")
         # TODO Выдать что формат не правильный вывести в сообщение бот ( точно правильное место )
-
-
-
- 
-

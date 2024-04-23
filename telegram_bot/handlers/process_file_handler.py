@@ -16,9 +16,11 @@ from DB.Mongo.mongo_db import (
     UserBalanceRepoORM,
     UserDocsRepoORM,
 )
-from insiht_bot_container import config_data
-from lexicon.LEXICON_RU import LEXICON_RU, TIME_ERROR_MESSAGE
 from logging_module.log_config import insighter_logger
+from settings import project_settings
+
+from lexicon.LEXICON_RU import LEXICON_RU, TIME_ERROR_MESSAGE
+
 from main_process.ChatGPT.gpt_models_information import GPTModelManager
 from main_process.process_pipline import PipelineData, PipelineQueues
 from main_process.youtube_option.youtube_downloader import get_youtube_audio_duration, download_youtube_audio
@@ -43,7 +45,7 @@ from telegram_bot.states.summary_from_audio import FSMSummaryFromAudioScenario
 # Повесить мидлварь только на этот роутер
 router = Router()
 env: Env = Env()
-env.read_env(".env")
+
 
 
 @router.callback_query(AssistantCallbackFactory.filter())
@@ -176,11 +178,11 @@ async def processed_load_youtube_file(
         else:
             download_message = await message.answer(text="Скачиваю видео ...")
             # TODO Вынести в конфиг энв фалйл только
-            path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
-                                                                       path=f"/var/lib/docker/volumes/insighter_ai_shared_volume/_data/{bot.token}/music/"))
-
             # path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
-            #                                                            path=r"D:\projects\AIPO\insighter_ai\insighter\main_process\temp"))
+            #                                                            path=f"/var/lib/docker/volumes/insighter_ai_shared_volume/_data/{bot.token}/music/"))
+
+            path_to_video = asyncio.create_task(download_youtube_audio(url=income_text,
+                                                                       path=r"D:\projects\AIPO\insighter_ai\insighter\main_process\temp"))
 
             file_path = await path_to_video
             # TODO не очивидн что делает кусок стейта
@@ -400,8 +402,8 @@ async def processed_do_ai_conversation(
 
         meta_information = {
             "ai_model": {
-                "summary_model": env("MODEL_VERSION"),
-                "transcribe_model": env("WHISPER_MODEL_VERSION"),
+                "summary_model": project_settings.open_ai.chat_gpt.gpt_model_version,
+                "transcribe_model": project_settings.open_ai.whisper.whisper_model_version,
             },
             "costs": {
                 "whisper": whisper_cost,

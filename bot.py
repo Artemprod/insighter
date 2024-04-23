@@ -8,13 +8,13 @@ from aiogram.client.telegram import TelegramAPIServer
 from aiogram.fsm.storage.redis import Redis, RedisStorage
 
 from enteties.queue_entity import PipelineQueues
+from logging_module.log_config import insighter_logger
 from telegram_bot.handlers import (
     payment_handler,
 )
 from telegram_bot.handlers import docs_handlers, command_handler, process_file_handler
 from insiht_bot_container import (
     assistant_repository,
-    config_data,
     document_repository,
     file_format_manager,
     gpt_dispatcher_only_longcahin,
@@ -25,9 +25,9 @@ from insiht_bot_container import (
     transaction_repository,
     user_balance_repo,
     user_repository,
-    whisper_post_processor, mixpanel_tracker,
+    whisper_post_processor, mixpanel_tracker, project_settings
 )
-from logging_module.log_config import insighter_logger
+
 from main_process.process_pipline import ProcesQueuePipline
 from telegram_bot.keyboards.main_menu import set_main_menu
 from telegram_bot.midleware.antiflood import AntiFloodMiddleware
@@ -37,9 +37,8 @@ from telegram_bot.midleware.attempts import CheckAttemptsMiddleware
 async def create_bot(queue_pipeline) -> None:
     root_dir = os.path.normpath(os.path.abspath(os.path.dirname(__file__)))
 
-    config = config_data
-    session = AiohttpSession(api=TelegramAPIServer.from_base(config.telegram_server.URI))
-    system_type = config_data.system.system_type
+    session = AiohttpSession(api=TelegramAPIServer.from_base(project_settings.docker_telegram_server))
+    system_type = project_settings.system
 
     if system_type == "local":
         dp: Dispatcher = Dispatcher(
@@ -58,8 +57,8 @@ async def create_bot(queue_pipeline) -> None:
 
     elif system_type == "docker":
         redis = Redis(
-            host=config.redis_storage.main_bot_docker_host,
-            port=config.redis_storage.main_bot_docker_port,
+            host=project_settings.data_base.redis_db.redis_main_bot_docker_host,
+            port=project_settings.data_base.redis_db.redis_main_bot_docker_port,
         )
         storage: RedisStorage = RedisStorage(redis=redis)
         dp: Dispatcher = Dispatcher(
@@ -76,7 +75,7 @@ async def create_bot(queue_pipeline) -> None:
             mixpanel_tracker=mixpanel_tracker
         )
         insighter_logger.info("docker system initialized")
-    bot: Bot = Bot(token=config.Bot.tg_bot_token,
+    bot: Bot = Bot(token=project_settings.telegram_bot_token,
                    default=DefaultBotProperties(parse_mode="HTML"),
                    session=session)
 
@@ -103,7 +102,7 @@ async def create_pipline_processes(queue_pipeline) -> None:
         ai_llm_request=gpt_dispatcher_only_longcahin,
         format_definer=file_format_manager,
         progress_bar=progress_bar,
-        config_data=config_data,
+        config_data=project_settings,
         post_processor=whisper_post_processor,
     )
     await pipeline_process.run_process()

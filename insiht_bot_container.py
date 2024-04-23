@@ -1,6 +1,6 @@
 from analitics.mixpanel_system.mixpanel_tracker import MixpanelAnalyticsSystem
 from api.progress_bar.command import ProgressBarClient
-from config.bot_configs import Config, load_bot_config
+
 from DB.Mongo.mongo_db import (
     MongoAssistantRepositoryORM,
     MongoORMConnection,
@@ -10,6 +10,9 @@ from DB.Mongo.mongo_db import (
     UserBalanceRepoORM,
     UserDocsRepoORM,
 )
+from settings import project_settings
+
+
 from main_process.ChatGPT.gpt_dispatcher import (
     BigDataGPTWorker,
     GPTDispatcher,
@@ -38,15 +41,16 @@ from main_process.Whisper.whisper_dispatcher import (
 )
 from main_process.Whisper.whisper_information import WhisperModelManager
 
+
+# ______DATABASE ____________________________________________
 # ______LOGGING____________________________________________
 
 # ______FORMATS____________________________________________
 formats = FORMATS()
 # ______CONFIGS____________________________________________
-config_data: Config = load_bot_config(".env")
-# ______DATABASE ____________________________________________
 
-mongo_connection = MongoORMConnection(config_data.data_base, system_type=config_data.system.system_type)
+
+mongo_connection = MongoORMConnection(project_settings.data_base.mongo_db, system_type=project_settings.system)
 assistant_repository = MongoAssistantRepositoryORM()
 user_repository = MongoUserRepoORM()
 document_repository = UserDocsRepoORM()
@@ -55,7 +59,7 @@ transaction_repository = TransactionRepoORM()
 tariff_repository = TariffRepoORM()
 
 # ______PROGRESSBAR____________________________________________
-progress_bar = ProgressBarClient()
+progress_bar = ProgressBarClient(server_url=project_settings.docker_telegram_server)
 
 # ______TOKENIZER____________________________________________
 tokenizer = TextTokenizer()
@@ -128,7 +132,7 @@ text_invoker = TextInvokeFactory(
     formats=formats,
 )
 # ____ANALITIC INSTRUMENT____________________________________________
-mixpanel_tracker = MixpanelAnalyticsSystem(mixpanel_token=config_data.analytical_system_token)
+mixpanel_tracker = MixpanelAnalyticsSystem(mixpanel_token=project_settings.mixpanel)
 
 
 # ______PROCESS_PIPELINE____________________________________________

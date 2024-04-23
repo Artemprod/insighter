@@ -32,6 +32,8 @@ from costume_exceptions.ai_exceptions import (
 from DB.Mongo.mongo_db import MongoAssistantRepositoryORM
 from DB.Mongo.mongo_enteties import Assistant
 from logging_module.log_config import insighter_logger
+
+
 from main_process.ChatGPT.gpt_enteties import AssistantInWork
 from main_process.ChatGPT.gpt_message import GPTMessage, GPTRole
 from main_process.ChatGPT.gpt_models_information import GPTModelManager

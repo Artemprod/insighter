@@ -5,6 +5,8 @@ from openai import AsyncOpenAI
 
 from costume_exceptions.ai_exceptions import EmptyResponseArrayError
 from logging_module.log_config import insighter_logger
+
+
 from main_process.ChatGPT.gpt_message import GPTMessage
 from main_process.ChatGPT.gpt_options import GPTOptions
 

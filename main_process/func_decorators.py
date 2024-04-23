@@ -4,6 +4,7 @@ import time
 from logging_module.log_config import insighter_logger
 
 
+
 def ameasure_time(func):
     """
     Measures the execution time of an async function.
