@@ -294,8 +294,10 @@ async def get_openai_model_cost_table(model_name="gpt-3.5-turbo", is_completion=
 
 async def calculate_gpt_cost_with_tiktoken(input_text, response_text, model="gpt-3.5-turbo-16k-0613"):
     # Получаем кодировку для модели
-    encoding = tiktoken.encoding_for_model(model)
-
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        return None
     # Получаем стоимость токена для модели и завершающего ответа
     prompt_cost_per_token = await get_openai_model_cost_table(model_name=model, is_completion=False)
     completion_cost_per_token = await get_openai_model_cost_table(model_name=model, is_completion=True)

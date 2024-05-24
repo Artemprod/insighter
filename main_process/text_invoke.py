@@ -239,5 +239,5 @@ class AssemblyInvoke(IVideoFileHandler):
 
         text = ""
         for utterance in transcript.utterances:
-            text += f"Speaker {utterance.speaker}: {utterance.text}\n"
+            text += f"Speaker {utterance.speaker}: {utterance.text}\n\n"
         return text
