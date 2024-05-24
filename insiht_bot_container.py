@@ -28,7 +28,7 @@ from main_process.text_invoke import (
     PdfFileHandler,
     TextInvokeFactory,
     TxtFileHandler,
-    VideoFileHandler,
+    VideoFileHandler, AssemblyInvoke,
 )
 from main_process.Whisper.openai_whisper_complain import WhisperClient
 from main_process.Whisper.whisper_dispatcher import (
@@ -116,7 +116,7 @@ gpt_dispatcher_only_longcahin = GPTDispatcherOnlyLonghain(
 
 pdf_handler = PdfFileHandler()
 txt_handler = TxtFileHandler()
-video_handler = VideoFileHandler(ai_transcriber=recognition_factory)
+video_handler = AssemblyInvoke(api_key=config_data.assembly)
 audio_handler = AudioFileHandler(ai_transcriber=recognition_factory)
 
 text_invoker = TextInvokeFactory(

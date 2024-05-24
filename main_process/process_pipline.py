@@ -131,8 +131,8 @@ class ProcesQueuePipline:
                     await self.progress_bar.stop(chat_id=data.telegram_message.from_user.id)
 
                 if invoked_text:
-                    post_processed_text = await self.__post_processor.remove_redundant_repeats(text=invoked_text)
-                    data.transcribed_text = post_processed_text
+                    # post_processed_text = await self.__post_processor.remove_redundant_repeats(text=invoked_text)
+                    data.transcribed_text = invoked_text
                     # TODO: Подумать как вынести ( тут зависимости от реализации )
                     try:
                         document_id = data.debase_document_id

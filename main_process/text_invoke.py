@@ -9,6 +9,7 @@ import aiofiles
 import chardet
 from environs import Env
 from PyPDF2 import PdfReader
+import assemblyai as aai
 
 from costume_exceptions.file_read_exceptions import UnknownPDFreadFileError
 from costume_exceptions.format_exceptions import EncodingDetectionError
@@ -149,15 +150,59 @@ class FORMATS:
         return all_formats
 
 
+# class TextInvokeFactory(ITextInvokeFactory):
+#     def __init__(
+#             self,
+#             format_definer: FileFormatDefiner,
+#             pdf_handler: IPdfFileHandler,
+#             txt_handler: ITxtFileHandler,
+#             video_handler: IVideoFileHandler,
+#             audio_handler: IAudioFileHandler,
+#             formats: FORMATS,
+#     ):
+#         self._format_definer = format_definer
+#         self._video_handler = video_handler
+#         self._audio_handler = audio_handler
+#         self._txt_handler = txt_handler
+#         self._pdf_handler = pdf_handler
+#         self.formats = formats
+#
+#     async def invoke_text(self, file_path: str) -> str:
+#         try:
+#             invoker = await self.__create_invoker(file_path)
+#         except EncodingDetectionError as e:
+#             insighter_logger.exception(e, "Failf to invoke text")
+#             raise EncodingDetectionError from e
+#
+#         try:
+#             text = await invoker.invoke_text(file_path)
+#             insighter_logger.info("text invoked")
+#             return text
+#         except Exception as e:
+#             insighter_logger.exception(e, "Failf to invoke text")
+#             raise e
+#
+#     async def __create_invoker(self, file_path):
+#         income_file_format = await self._format_definer.define_format(file_path=file_path)
+#         if income_file_format in self.formats.VIDEO_FORMATS:
+#             return self._video_handler
+#         elif income_file_format in self.formats.AUDIO_FORMATS:
+#             return self._audio_handler
+#         else:
+#             # TODO логировать все новые файлы
+#             insighter_logger.exception(f"This file format {income_file_format} havent supported")
+#             raise EncodingDetectionError(f"This file format {income_file_format} havent supported")
+#         # TODO Выдать что формат не правильный вывести в сообщение бот ( точно правильное место )
+
 class TextInvokeFactory(ITextInvokeFactory):
     def __init__(
-        self,
-        format_definer: FileFormatDefiner,
-        pdf_handler: IPdfFileHandler,
-        txt_handler: ITxtFileHandler,
-        video_handler: IVideoFileHandler,
-        audio_handler: IAudioFileHandler,
-        formats: FORMATS,
+            self,
+            format_definer: FileFormatDefiner,
+            pdf_handler: IPdfFileHandler,
+            txt_handler: ITxtFileHandler,
+            video_handler: IVideoFileHandler,
+            audio_handler: IAudioFileHandler,
+            formats: FORMATS,
     ):
         self._format_definer = format_definer
         self._video_handler = video_handler
@@ -168,32 +213,31 @@ class TextInvokeFactory(ITextInvokeFactory):
 
     async def invoke_text(self, file_path: str) -> str:
         try:
-            invoker = await self.__create_invoker(file_path)
-        except EncodingDetectionError as e:
-            insighter_logger.exception(e, "Failf to invoke text")
-            raise EncodingDetectionError from e
-
-        try:
-            text = await invoker.invoke_text(file_path)
+            text = await self._video_handler.invoke_text(file_path)
             insighter_logger.info("text invoked")
             return text
         except Exception as e:
             insighter_logger.exception(e, "Failf to invoke text")
             raise e
 
-    async def __create_invoker(self, file_path):
-        income_file_format = await self._format_definer.define_format(file_path=file_path)
-        if income_file_format in self.formats.VIDEO_FORMATS:
-            return self._video_handler
-        elif income_file_format in self.formats.AUDIO_FORMATS:
-            return self._audio_handler
-        else:
-            # TODO логировать все новые файлы
-            insighter_logger.exception(f"This file format {income_file_format} havent supported")
-            raise EncodingDetectionError(f"This file format {income_file_format} havent supported")
-        # TODO Выдать что формат не правильный вывести в сообщение бот ( точно правильное место )
 
+class AssemblyInvoke(IVideoFileHandler):
 
+    def __init__(self, api_key):
+        aai.settings.api_key = api_key
 
- 
+    async def invoke_text(self, file_path):
+        config = aai.TranscriptionConfig(speaker_labels=True,
+                                         language_code='ru'
+                                         )
 
+        transcriber = aai.Transcriber()
+        transcript = transcriber.transcribe(
+            file_path,
+            config=config
+        )
+
+        text = ""
+        for utterance in transcript.utterances:
+            text += f"Speaker {utterance.speaker}: {utterance.text}\n"
+        return text
