@@ -15,7 +15,7 @@ from main_process.ChatGPT.gpt_dispatcher import (
     GPTDispatcher,
     GPTDispatcherOnlyLonghain,
     OneRequestGPTWorker,
-    TextTokenizer,
+    TextTokenizer, GPTDispatcherOnly4o,
 )
 from main_process.ChatGPT.gpt_models_information import GPTModelManager
 from main_process.file_format_manager import TelegramServerFileFormatDefiner
@@ -111,6 +111,10 @@ gpt_dispatcher = GPTDispatcher(
 gpt_dispatcher_only_longcahin = GPTDispatcherOnlyLonghain(
     long_request_gpt=long_request_gpt,
 )
+gpt_dispatcher_bare_model_4o = GPTDispatcherOnly4o(
+    token_sizer=tokenizer,
+    model_manager=gpt_model_manager,
+    one_request_gpt=one_request_gpt)
 
 # ______TEXT_INVOKERS_OBJECTS____________________________________________
 
@@ -130,10 +134,8 @@ text_invoker = TextInvokeFactory(
 # ____ANALITIC INSTRUMENT____________________________________________
 mixpanel_tracker = MixpanelAnalyticsSystem(mixpanel_token=config_data.analytical_system_token)
 
-
 # ______PROCESS_PIPELINE____________________________________________
 
 
 # ____SERVER_CONNECTION____________________________________________
 # server_file_worker = ServerFileManager()
-
