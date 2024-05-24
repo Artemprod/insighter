@@ -1,5 +1,6 @@
 name: Insighter deployment
 on:
+  workflow_dispatch:
   push:
     branches:
       - stage
