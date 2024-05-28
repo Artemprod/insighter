@@ -191,7 +191,7 @@ class ProcesQueuePipline:
 
 
             if text_to_summary:
-                sum_id = await data.telegram_bot.send_message(text="Делаю саммари ...", chat_id=data.telegram_message.chat.id,)
+                sum_id = await data.telegram_bot.send_message(text="Пишу саммари...", chat_id=data.telegram_message.chat.id,)
                 summary = await self.__ai_llm_request.compile_request(
                     assistant_id=data.assistant_id,
                     income_text=text_to_summary,
