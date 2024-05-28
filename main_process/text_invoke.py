@@ -18,6 +18,7 @@ from logging_module.log_config import insighter_logger
 from main_process.file_format_manager import FileFormatDefiner
 from main_process.Whisper.whisper_dispatcher import MediaRecognitionFactory
 
+
 def async_wrap(func):
     @wraps(func)
     async def run(*args, loop=None, executor=None, **kwargs):
@@ -253,8 +254,7 @@ class AssemblyInvoke(IVideoFileHandler):
         for utterance in transcript.utterances:
             text += f"Speaker {utterance.speaker}: {utterance.text}\n\n"
         return text
-    async def invoke_text(self,file_path):
-        result = await asyncio.create_task(self._invoke_text(file_path))
+
+    async def invoke_text(self, file_path):
+        result = await self._invoke_text(file_path)
         return result
-
-
