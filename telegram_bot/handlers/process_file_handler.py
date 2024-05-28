@@ -279,7 +279,7 @@ async def processed_load_file(
                         )
                     except TelegramBadRequest as e:
                         insighter_logger.exception(f"Ошибка при попытке удалить сообщение: {e}")
-                handle_mes = await message.answer(text="Делаю транаскрибацию ...")
+                handle_mes = await message.answer(text="Делаю транскрибацию ...")
                 # Form data to summary pipline
                 pipline_object = await from_pipeline_data_object(
                     message=message,
