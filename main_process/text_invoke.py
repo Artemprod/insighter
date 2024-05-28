@@ -238,16 +238,18 @@ class AssemblyInvoke(IVideoFileHandler):
     def __init__(self, api_key):
         aai.settings.api_key = api_key
 
-
-    @staticmethod
-    async def _invoke_text(file_path):
+    @async_wrap
+    def _invoke_text(self, file_path):
         config = aai.TranscriptionConfig(speaker_labels=True,
                                          language_code='ru'
                                          )
 
         transcriber = aai.Transcriber()
-        future_transcript = transcriber.transcribe_async(file_path, config=config)
-        transcript = future_transcript.result()
+        transcript = transcriber.transcribe(
+            file_path,
+            config=config
+        )
+
         text = ""
         for utterance in transcript.utterances:
             text += f"Speaker {utterance.speaker}: {utterance.text}\n\n"
