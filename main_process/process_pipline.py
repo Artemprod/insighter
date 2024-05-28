@@ -115,7 +115,7 @@ class ProcesQueuePipline:
                 try:
                     invoked_text = await self.__text_invoker.invoke_text(path_to_file)
                 except Exception as e:
-                    insighter_logger.exception(e, "Cant invoke text", self.__dict__)
+                    insighter_logger.exception("Cant invoke text: {}", e)
                     await data.fsm_bot_state.set_state(FSMSummaryFromAudioScenario.load_file)
                     await data.telegram_bot.send_message(
                         chat_id=data.telegram_message.chat.id,
