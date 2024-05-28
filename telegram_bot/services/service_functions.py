@@ -141,8 +141,10 @@ async def from_pipeline_data_object(
         file_duration: float,
         file_path: str,
         file_type: str,
+        info_messages:dict,
         additional_system_information=None,
         additional_user_information=None,
+
 ) -> PipelineData:
     """
     Creates a PipelineData object from the provided inputs.
@@ -155,6 +157,7 @@ async def from_pipeline_data_object(
         file_duration=file_duration,
         additional_system_information=additional_system_information,
         additional_user_information=additional_user_information,
+        info_messages=info_messages,
         process_time={},
         file_path=file_path,
         file_type=file_type,

@@ -78,22 +78,13 @@ class ProcesQueuePipline:
             await invoke_text_queue.put(data)
             income_items_queue.task_done()
 
-            progres_bar_duration = await estimate_transcribe_duration(seconds=file_duration)
-            await asyncio.create_task(self.progress_bar.start(
-                chat_id=message.from_user.id,
-                time=progres_bar_duration,
-                process_name="распознавание файла ...",
-                bot_token=data.telegram_bot.token,
-                server_route=config_data.telegram_server.URI
-            ))
 
         except Exception as e:
             await data.telegram_bot.send_message(
                 chat_id=data.telegram_message.chat.id,
                 text=LEXICON_RU["error_message"],
             )
-            await self.progress_bar.stop(chat_id=message.from_user.id)
-            insighter_logger.exception(e)
+
 
     async def invoke_text(
         self,
@@ -114,6 +105,8 @@ class ProcesQueuePipline:
             data: PipelineData = await invoke_text_queue.get()
             data.process_time.setdefault("invoke_text", {})
             data.process_time["invoke_text"]["start_time"] = time.time()
+            handle_mes_id = data.info_messages['handle_mes'].message_id
+
             insighter_logger.info(f"Получил данные для извлечения текста {data}")
             path_to_file = data.file_path
             insighter_logger.info("Путь до файла", path_to_file)
@@ -128,7 +121,7 @@ class ProcesQueuePipline:
                         chat_id=data.telegram_message.chat.id,
                         text=LEXICON_RU["error_message"],
                     )
-                    await self.progress_bar.stop(chat_id=data.telegram_message.from_user.id)
+
 
                 if invoked_text:
                     # post_processed_text = await self.__post_processor.remove_redundant_repeats(text=invoked_text)
@@ -154,12 +147,13 @@ class ProcesQueuePipline:
                             chat_id=data.telegram_message.chat.id,
                             text=LEXICON_RU["error_message"],
                         )
-                        await self.progress_bar.stop(chat_id=data.telegram_message.from_user.id)
+
 
                     finally:
                         insighter_logger.info(f"Провел извлевчение {data}")
                         await gen_answer_queue.put(data)
                         await transcribed_text_sender_queue.put(data)
+                        await data.telegram_bot.delete_message(message_id=handle_mes_id,chat_id=data.telegram_message.chat.id,)
                         invoke_text_queue.task_done()
                         data.process_time["invoke_text"]["finished_time"] = time.time()
                         data.process_time["invoke_text"]["total_time"] = (
@@ -173,7 +167,7 @@ class ProcesQueuePipline:
                         chat_id=data.telegram_message.chat.id,
                         text=LEXICON_RU["error_message"],
                     )
-                    await self.progress_bar.stop(chat_id=data.telegram_message.from_user.id)
+
 
             else:
                 insighter_logger.exception("No path to file")
@@ -182,7 +176,7 @@ class ProcesQueuePipline:
                     chat_id=data.telegram_message.chat.id,
                     text=LEXICON_RU["error_message"],
                 )
-                await self.progress_bar.stop(chat_id=data.telegram_message.from_user.id)
+
 
     async def generate_summary_answer(self, gen_answer_queue: Queue, result_dispatching_queue: Queue):
         while True:
@@ -195,14 +189,9 @@ class ProcesQueuePipline:
             predicted_duration_for_summary = await estimate_gen_summary_duration(
                 text=text_to_summary)
 
-            progres_task = asyncio.create_task(self.progress_bar.start(
-                chat_id=data.telegram_message.from_user.id,
-                time=predicted_duration_for_summary,
-                process_name="Пишу саммари",
-                bot_token=data.telegram_bot.token,
-                server_route=config_data.telegram_server.URI
-            ))
+
             if text_to_summary:
+                sum_id = await data.telegram_bot.send_message(text="Делаю саммари ...", chat_id=data.telegram_message.chat.id,)
                 summary = await self.__ai_llm_request.compile_request(
                     assistant_id=data.assistant_id,
                     income_text=text_to_summary,
@@ -225,7 +214,7 @@ class ProcesQueuePipline:
                             self.__dict__,
                         )
 
-                        await self.progress_bar.stop(chat_id=data.telegram_message.from_user.id)
+
                     finally:
                         data.process_time["generate_summary_answer"]["finished_time"] = time.time()
                         data.process_time["generate_summary_answer"]["total_time"] = (
@@ -234,7 +223,8 @@ class ProcesQueuePipline:
                         )
                         await result_dispatching_queue.put(data)
                         gen_answer_queue.task_done()
-                        await progres_task
+                        await data.telegram_bot.delete_message(message_id=sum_id.message_id,chat_id=data.telegram_message.chat.id,)
+
                 else:
                     insighter_logger.exception("No summary")
                     await data.fsm_bot_state.set_state(FSMSummaryFromAudioScenario.load_file)
@@ -242,7 +232,7 @@ class ProcesQueuePipline:
                         chat_id=data.telegram_message.chat.id,
                         text=LEXICON_RU["error_message"],
                     )
-                    await self.progress_bar.stop(chat_id=data.telegram_message.from_user.id)
+
 
             else:
                 insighter_logger.exception("No text")
@@ -251,7 +241,6 @@ class ProcesQueuePipline:
                     chat_id=data.telegram_message.chat.id,
                     text=LEXICON_RU["error_message"],
                 )
-                await self.progress_bar.stop(chat_id=data.telegram_message.from_user.id)
 
     @staticmethod
     def create_tasks(number_of_workers, coro, *args):

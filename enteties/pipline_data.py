@@ -13,6 +13,7 @@ class PipelineData:
     fsm_bot_state: FSMContext
     file_duration: float
     process_time: dict
+    info_messages:dict
     file_type: Optional[str] = None
     additional_system_information: Optional[str] = None
     additional_user_information: Optional[str] = None
