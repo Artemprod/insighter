@@ -203,7 +203,7 @@ async def processed_load_youtube_file(
                 file_duration=file_duration,
                 file_path=file_path,
                 file_type='mp4',
-                info_messages={'handle_mes':handle_mes},
+                info_messages={'handle_mes': handle_mes},
                 additional_system_information=None,
                 additional_user_information=None,
             )
@@ -279,7 +279,7 @@ async def processed_load_file(
                         )
                     except TelegramBadRequest as e:
                         insighter_logger.exception(f"Ошибка при попытке удалить сообщение: {e}")
-
+                handle_mes = await message.answer(text="Делаю транаскрибацию ...")
                 # Form data to summary pipline
                 pipline_object = await from_pipeline_data_object(
                     message=message,
@@ -289,6 +289,7 @@ async def processed_load_file(
                     file_duration=file_duration,
                     file_path=file_path,
                     file_type=income_file_format,
+                    info_messages={'handle_mes': handle_mes},
                     additional_system_information=None,
                     additional_user_information=None,
                 )
