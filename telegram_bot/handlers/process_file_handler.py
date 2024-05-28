@@ -193,7 +193,7 @@ async def processed_load_youtube_file(
                 except TelegramBadRequest as e:
                     insighter_logger.exception(f"Ошибка при попытке удалить сообщение: {e}")
             # Form data to summary pipline
-            handle_mes = await message.answer(text="Делаю транаскрибацию ...")
+            handle_mes = await message.answer(text="Перевожу голос в текст...")
 
             pipline_object = await from_pipeline_data_object(
                 message=message,
