@@ -5,6 +5,7 @@ import os
 import re
 from abc import ABC, abstractmethod
 from datetime import datetime
+from functools import wraps, partial
 
 import ffmpeg
 import tiktoken

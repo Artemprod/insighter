@@ -3,6 +3,7 @@ import os
 from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
+from functools import wraps, partial
 from os import path
 
 import aiofiles
@@ -16,6 +17,16 @@ from costume_exceptions.format_exceptions import EncodingDetectionError
 from logging_module.log_config import insighter_logger
 from main_process.file_format_manager import FileFormatDefiner
 from main_process.Whisper.whisper_dispatcher import MediaRecognitionFactory
+
+def async_wrap(func):
+    @wraps(func)
+    async def run(*args, loop=None, executor=None, **kwargs):
+        if loop is None:
+            loop = asyncio.get_event_loop()
+        pfunc = partial(func, *args, **kwargs)
+        return await loop.run_in_executor(executor, pfunc)
+
+    return run
 
 
 class TextInvoker(ABC):
@@ -226,7 +237,8 @@ class AssemblyInvoke(IVideoFileHandler):
     def __init__(self, api_key):
         aai.settings.api_key = api_key
 
-    async def invoke_text(self, file_path):
+    @async_wrap
+    def _invoke_text(self, file_path):
         config = aai.TranscriptionConfig(speaker_labels=True,
                                          language_code='ru'
                                          )
@@ -241,3 +253,8 @@ class AssemblyInvoke(IVideoFileHandler):
         for utterance in transcript.utterances:
             text += f"Speaker {utterance.speaker}: {utterance.text}\n\n"
         return text
+    async def invoke_text(self,file_path):
+        result = await asyncio.create_task(self._invoke_text(file_path))
+        return result
+
+

@@ -5,12 +5,13 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
-from aiogram.fsm.storage.redis import Redis, RedisStorage
+from aiogram.fsm.storage.redis import RedisStorage, Redis
 
 from enteties.queue_entity import PipelineQueues
 from telegram_bot.handlers import (
     payment_handler,
 )
+
 from telegram_bot.handlers import docs_handlers, command_handler, process_file_handler
 from insiht_bot_container import (
     assistant_repository,
