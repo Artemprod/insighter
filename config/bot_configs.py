@@ -48,6 +48,8 @@ class TelegramServer:
     URI: str
 
 
+
+
 @dataclass
 class Config:
     Bot: TelegramBot
@@ -57,6 +59,7 @@ class Config:
     telegram_server: TelegramServer
     system: SystemType
     analytical_system_token: str
+    assembly:str
 
 
 def load_bot_config(path) -> Config:
@@ -74,6 +77,7 @@ def load_bot_config(path) -> Config:
     open_ai_key = OpenAIKEY(key=env("OPENAI_API_KEY"))
 
     return Config(
+        assembly=env("ASSAMBLY"),
         analytical_system_token=env("MIXPANEL"),
         system=SystemType(system_type=system_type),
         Bot=bot,

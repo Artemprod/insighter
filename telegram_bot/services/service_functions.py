@@ -5,6 +5,7 @@ import os
 import re
 from abc import ABC, abstractmethod
 from datetime import datetime
+from functools import wraps, partial
 
 import ffmpeg
 import tiktoken
@@ -15,9 +16,8 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
-
 from costume_exceptions.system_exceptions import SystemTypeError
-from DB.Mongo.mongo_db import  UserBalanceRepoORM
+from DB.Mongo.mongo_db import UserBalanceRepoORM
 from enteties.pipline_data import PipelineData
 from insiht_bot_container import (
     config_data,
@@ -76,8 +76,6 @@ def ensure_directory_exists(path):
         insighter_logger.info(f"Каталог создан: {path}")
     else:
         insighter_logger.info(f"Каталог уже существует: {path}")
-
-
 
 
 async def gen_doc_file_path(media_folder: str, sub_folder: str, message_event: Message) -> str:
@@ -143,8 +141,10 @@ async def from_pipeline_data_object(
         file_duration: float,
         file_path: str,
         file_type: str,
+        info_messages:dict,
         additional_system_information=None,
         additional_user_information=None,
+
 ) -> PipelineData:
     """
     Creates a PipelineData object from the provided inputs.
@@ -157,6 +157,7 @@ async def from_pipeline_data_object(
         file_duration=file_duration,
         additional_system_information=additional_system_information,
         additional_user_information=additional_user_information,
+        info_messages=info_messages,
         process_time={},
         file_path=file_path,
         file_type=file_type,
@@ -294,6 +295,8 @@ async def get_openai_model_cost_table(model_name="gpt-3.5-turbo", is_completion=
 
 async def calculate_gpt_cost_with_tiktoken(input_text, response_text, model="gpt-3.5-turbo-16k-0613"):
     # Получаем кодировку для модели
+    if model == 'gpt-4o':
+        return 1
     encoding = tiktoken.encoding_for_model(model)
 
     # Получаем стоимость токена для модели и завершающего ответа

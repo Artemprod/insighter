@@ -601,3 +601,47 @@ class GPTDispatcherOnlyLonghain(IGPTDispatcher):
         except GptApiRequestError as e:
             insighter_logger.exception(f"Failed to make request, exception is: {e.exception}")
             raise CompileRequestError from e
+
+
+class GPTDispatcherOnly4o(IGPTDispatcher):
+    def __init__(
+            self,
+            token_sizer: TextTokenizer,
+            model_manager: GPTModelManager,
+            one_request_gpt: OneRequestGPTWorker,
+
+    ):
+        self.__token_sizer = token_sizer
+        self.model_manager = model_manager
+        self.__one_request_gpt = one_request_gpt
+
+    async def compile_request(
+            self,
+            assistant_id,
+            income_text: str,
+            additional_system_information: str = None,
+            additional_user_information: str = None,
+    ) -> str:
+        """
+        Run a request to chat GPT depending on text's token size
+        if token capacity larger than GPT model maximum capacity ir uses long realization if less usual
+        :param additional_user_information:
+        :param additional_system_information:
+        :param income_text:
+        :param assistant_id:
+        :param text:
+        :return:
+        """
+        try:
+
+            result = await self.__one_request_gpt.make_gpt_request(
+                assistant_id=assistant_id,
+                income_text=income_text,
+                additional_system_information=additional_system_information,
+                additional_user_information=additional_user_information,
+            )
+            insighter_logger.info("successful api request from dispatcher")
+            return result
+        except GptApiRequestError as e:
+            insighter_logger.exception(f"Failed to make request, exception is: {e.exception}")
+            raise CompileRequestError from e

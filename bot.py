@@ -5,12 +5,13 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
-from aiogram.fsm.storage.redis import Redis, RedisStorage
+from aiogram.fsm.storage.redis import RedisStorage, Redis
 
 from enteties.queue_entity import PipelineQueues
 from telegram_bot.handlers import (
     payment_handler,
 )
+
 from telegram_bot.handlers import docs_handlers, command_handler, process_file_handler
 from insiht_bot_container import (
     assistant_repository,
@@ -25,7 +26,7 @@ from insiht_bot_container import (
     transaction_repository,
     user_balance_repo,
     user_repository,
-    whisper_post_processor, mixpanel_tracker,
+    whisper_post_processor, mixpanel_tracker, gpt_dispatcher_bare_model_4o,
 )
 from logging_module.log_config import insighter_logger
 from main_process.process_pipline import ProcesQueuePipline
@@ -100,7 +101,7 @@ async def create_pipline_processes(queue_pipeline) -> None:
         database_document_repository=document_repository,
         server_file_manager=server_file_manager,
         text_invoker=text_invoker,
-        ai_llm_request=gpt_dispatcher_only_longcahin,
+        ai_llm_request=gpt_dispatcher_bare_model_4o,
         format_definer=file_format_manager,
         progress_bar=progress_bar,
         config_data=config_data,
