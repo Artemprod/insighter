@@ -142,7 +142,7 @@ async def processed_load_youtube_file(
     instruction_message_id = int(data.get("instruction_message_id"))
     # TODO if not is_youtube лучше обрезать ветку которая не нужна ( если это это какая то простая валидция то быстро) (Сделать все валидации вверху ретернами )
     if not is_youtube:
-        await message.answer(text=LEXICON_RU["is_not_youtube_link"].format(link=income_text))
+        await message.answer(disable_web_page_preview=True,text=LEXICON_RU["is_not_youtube_link"].format(link=income_text))
         mixpanel_tracker.send_event(
             event=BaseEvent(user_id=message.from_user.id, event_name=EventsNames.ERROR_RECEIVED.value,
                             properties={'error': 'wrong link format',
