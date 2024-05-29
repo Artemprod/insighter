@@ -110,7 +110,7 @@ class TelegramMediaFileManager(MediaFileManager):
 
 
 class ServerFileManager(MediaFileManager):
-    local_file_path = r"D:\projects\AIPO\insighter_ai\insighter\main_process\temp"
+    local_file_path = r"D:\projects\AIPO\insighter\temp"
 
     @dataclass
     class Configs:
@@ -153,10 +153,10 @@ class ServerFileManager(MediaFileManager):
 
     def create_file_paths(self) -> Filepaths:
         token = self.__bot_token()
-        video = f"/var/lib/docker/volumes/insighter_ai_shared_volume/_data/{token}/videos/"
-        audio = f"/var/lib/docker/volumes/insighter_ai_shared_volume/_data/{token}/music/"
-        documents = f"/var/lib/docker/volumes/insighter_ai_shared_volume/_data/{token}/documents/"
-        voice = f"/var/lib/docker/volumes/insighter_ai_shared_volume/_data/{token}/voice/"
+        video = f"/var/lib/docker/volumes/prod_shared_volume/_data/{token}/videos/"
+        audio = f"/var/lib/docker/volumes/prod_shared_volume/_data/{token}/music/"
+        documents = f"/var/lib/docker/volumes/prod_shared_volume/_data/{token}/documents/"
+        voice = f"/var/lib/docker/volumes/prod_shared_volume/_data/{token}/voice/"
         return ServerFileManager.Filepaths(audio=audio, video=video, documents=documents, voice=voice)
 
     @classmethod
@@ -259,7 +259,10 @@ class ServerFileManager(MediaFileManager):
             server_file_path = f"{self.file_paths.voice}{file_name}"
 
         try:
+
             local_file_path = ServerFileManager.local_file_path
+            if not os.path.exists(local_file_path):
+                os.makedirs(local_file_path)
             local_file_full_path = os.path.join(local_file_path, file_name)
             sftp = client.open_sftp()
             sftp.get(server_file_path, local_file_full_path)
