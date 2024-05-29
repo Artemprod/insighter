@@ -102,11 +102,11 @@ async def wrong_file_format(message: Message, bot: Bot, mixpanel_tracker: Mixpan
     await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 
     await bot.send_message(
+        disable_web_page_preview=True,
         chat_id=message.chat.id,
         text=LEXICON_RU["wrong_format"].format(
             income_file_format=message.content_type,
             actual_formats=LEXICON_RU["actual_formats"],
-            disable_web_page_preview=True
         ),
     )
     mixpanel_tracker.send_event(
