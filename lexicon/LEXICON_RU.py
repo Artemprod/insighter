@@ -49,7 +49,7 @@ Insighter - твоя суперсила, которая позволит тра�
 Данный формат файла: "<i>{income_file_format}</i>", не поддерживается сервисом.
 
 <b>Поддерживаемые форматы файлов:</b>\n
-<b>Аудио:</b> m4a, m4b, m4p, m4r, mp3, aac, ac3, wav, alac, flac, flv, wma, amr, mpga, ogg, oga, mogg, 8svx, aif, ape, au, dss, opus, qcp, tta, voc, wv\n
+<b>Аудио:</b> m4a, m4b, m4p, m4r, mp3, aac, ac3, wav, alac, flac, flv, wma, amr, mpga, ogg, oga, mogg, 8svx, aif, ape, au, dss, opus, qcp, tta, voc, wv
 <b>Видео:</b> m4p, m4v, webm, mts, m2ts, ts, mov, mp2, mxf
 <b>Ссылка на видео:</b> только https://www.youtube.com/\n
 Загрузи файл подходящего формата

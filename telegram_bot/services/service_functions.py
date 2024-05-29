@@ -141,7 +141,7 @@ async def from_pipeline_data_object(
         file_duration: float,
         file_path: str,
         file_type: str,
-        info_messages:dict,
+        info_messages: dict,
         additional_system_information=None,
         additional_user_information=None,
 
@@ -382,8 +382,9 @@ async def format_filter(message, bot, state):
                 disable_web_page_preview=True,
                 chat_id=message.chat.id,
                 text=LEXICON_RU["wrong_format"].format(
-                    income_file_format=income_file_format,
+                    income_file_format=message.content_type,
                     actual_formats=LEXICON_RU["actual_formats"],
+
                 ),
 
             )
