@@ -18,6 +18,7 @@ from logging_module.log_config import insighter_logger
 from main_process.file_format_manager import FileFormatDefiner
 from main_process.Whisper.whisper_dispatcher import MediaRecognitionFactory
 
+
 def async_wrap(func):
     @wraps(func)
     async def run(*args, loop=None, executor=None, **kwargs):
@@ -228,7 +229,7 @@ class TextInvokeFactory(ITextInvokeFactory):
             insighter_logger.info("text invoked")
             return text
         except Exception as e:
-            insighter_logger.exception(e, "Failf to invoke text")
+            insighter_logger.exception("Failf to invoke text: {}", e)
             raise e
 
 
@@ -237,24 +238,26 @@ class AssemblyInvoke(IVideoFileHandler):
     def __init__(self, api_key):
         aai.settings.api_key = api_key
 
-    @async_wrap
-    def _invoke_text(self, file_path):
+    @staticmethod
+    async def _invoke_text(file_path):
         config = aai.TranscriptionConfig(speaker_labels=True,
                                          language_code='ru'
                                          )
 
         transcriber = aai.Transcriber()
-        transcript = transcriber.transcribe(
-            file_path,
-            config=config
-        )
+        future_transcript = transcriber.transcribe_async(file_path, config=config)
+        transcript = future_transcript.result()
+
+        if not transcript.utterances:
+            raise ValueError("No response from assembly")
 
         text = ""
         for utterance in transcript.utterances:
             text += f"Speaker {utterance.speaker}: {utterance.text}\n\n"
         return text
-    async def invoke_text(self,file_path):
-        result = await asyncio.create_task(self._invoke_text(file_path))
+
+    async def invoke_text(self, file_path):
+        result = await self._invoke_text(file_path)
         return result
 
 

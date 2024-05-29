@@ -111,18 +111,7 @@ class ProcesQueuePipline:
             path_to_file = data.file_path
             insighter_logger.info("Путь до файла", path_to_file)
             if path_to_file:
-                invoked_text = None
-                try:
-                    invoked_text = await self.__text_invoker.invoke_text(path_to_file)
-                except Exception as e:
-                    insighter_logger.exception(e, "Cant invoke text", self.__dict__)
-                    await data.fsm_bot_state.set_state(FSMSummaryFromAudioScenario.load_file)
-                    await data.telegram_bot.send_message(
-                        chat_id=data.telegram_message.chat.id,
-                        text=LEXICON_RU["error_message"],
-                    )
-
-
+                invoked_text = await self.__text_invoker.invoke_text(path_to_file)
                 if invoked_text:
                     # post_processed_text = await self.__post_processor.remove_redundant_repeats(text=invoked_text)
                     data.transcribed_text = invoked_text
