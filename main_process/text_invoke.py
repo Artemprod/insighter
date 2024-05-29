@@ -229,7 +229,7 @@ class TextInvokeFactory(ITextInvokeFactory):
             insighter_logger.info("text invoked")
             return text
         except Exception as e:
-            insighter_logger.exception(e, "Failf to invoke text")
+            insighter_logger.exception("Failf to invoke text: {}", e)
             raise e
 
 
