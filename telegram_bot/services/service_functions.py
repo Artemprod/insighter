@@ -379,12 +379,13 @@ async def format_filter(message, bot, state):
                 chat_id=begin_message.chat.id,
             )
             message = await bot.send_message(
+                disable_web_page_preview=True,
                 chat_id=message.chat.id,
                 text=LEXICON_RU["wrong_format"].format(
                     income_file_format=income_file_format,
                     actual_formats=LEXICON_RU["actual_formats"],
-                    disable_web_page_preview=True
                 ),
+
             )
             await state.update_data(instruction_message_id=message.message_id)
             await state.set_state(FSMSummaryFromAudioScenario.load_file)
