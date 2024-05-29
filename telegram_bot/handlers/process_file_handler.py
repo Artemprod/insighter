@@ -60,12 +60,14 @@ async def processed_gen_answer(
         message = await callback.message.edit_text(
             text=LEXICON_RU.get("instructions", "как дела ?"),
             reply_markup=crete_inline_keyboard_back_from_loading(),
+            disable_web_page_preview=True
         )
 
     else:
         message = await callback.message.answer(
             text=LEXICON_RU.get("instructions", "как дела ?"),
             reply_markup=crete_inline_keyboard_back_from_loading(),
+            disable_web_page_preview=True
         )
     # записываем имя асистента пользователью
     assistant_name = await assistant_repository.get_assistant_name(assistant_id=callback_data.assistant_id)
@@ -104,6 +106,7 @@ async def wrong_file_format(message: Message, bot: Bot, mixpanel_tracker: Mixpan
         text=LEXICON_RU["wrong_format"].format(
             income_file_format=message.content_type,
             actual_formats=LEXICON_RU["actual_formats"],
+            disable_web_page_preview=True
         ),
     )
     mixpanel_tracker.send_event(

@@ -110,7 +110,7 @@ class MongoUserRepoORM:
 
     # TODO вынести количесвто попыток при старте в конфиги
     @staticmethod
-    async def save_new_user(tg_username, name, tg_id, tg_link, attempts=3, money=0, seconds=6000):
+    async def save_new_user(tg_username, name, tg_id, tg_link, attempts=3, money=0, seconds=1200):
         new_user: User = User(
             tg_username=tg_username,
             tg_link=tg_link,

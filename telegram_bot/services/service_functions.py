@@ -383,6 +383,7 @@ async def format_filter(message, bot, state):
                 text=LEXICON_RU["wrong_format"].format(
                     income_file_format=income_file_format,
                     actual_formats=LEXICON_RU["actual_formats"],
+                    disable_web_page_preview=True
                 ),
             )
             await state.update_data(instruction_message_id=message.message_id)
