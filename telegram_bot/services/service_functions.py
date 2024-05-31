@@ -350,54 +350,6 @@ async def calculate_whisper_cost(duration_sec, model="base", quality="standard")
     return round(total_cost, 4)  # Округляем до четырех знаков после запятой
 
 
-# async def format_filter(message, bot, state):
-#     system = config_data.system.system_type
-#     insighter_logger.info(system)
-#     if system == "docker":
-#         file_path_coro = server_file_manager.get_media_file(message=message, bot=bot)
-#     elif system == "local":
-#         file_path_coro = ServerFileManager().get_media_file(message=message, bot=bot)
-#
-#     else:
-#         insighter_logger.exception("Unknown system, add new system")
-#         raise SystemTypeError("Unknown system, add new system")
-#
-#     begin_message = await bot.send_message(chat_id=message.chat.id, text="Определяю формат файла...")
-#     try:
-#         file_path = await file_path_coro
-#         income_file_format = await file_format_manager.define_format(file_path=file_path)
-#
-#         if income_file_format in text_invoker.formats.make_list_of_formats():
-#             await bot.delete_message(
-#                 message_id=begin_message.message_id,
-#                 chat_id=begin_message.chat.id,
-#             )
-#             return file_path, income_file_format
-#         else:
-#             await bot.delete_message(
-#                 message_id=begin_message.message_id,
-#                 chat_id=begin_message.chat.id,
-#             )
-#             message = await bot.send_message(
-#                 disable_web_page_preview=True,
-#                 chat_id=message.chat.id,
-#                 text=LEXICON_RU["wrong_format"].format(
-#                     income_file_format=message.content_type,
-#                     actual_formats=LEXICON_RU["actual_formats"],
-#
-#                 ),
-#
-#             )
-#             await state.update_data(instruction_message_id=message.message_id)
-#             await state.set_state(FSMSummaryFromAudioScenario.load_file)
-#             return None
-#     except Exception as e:
-#         insighter_logger.exception(e)
-#         await bot.delete_message(message_id=begin_message.message_id, chat_id=begin_message.chat.id)
-#         message = await bot.send_message(chat_id=message.chat.id, text=LEXICON_RU["error_message"])
-#
-#         await state.update_data(instruction_message_id=message.message_id)
-#         await state.set_state(FSMSummaryFromAudioScenario.load_file)
 async def format_filter(message, bot, state):
     system = config_data.system.system_type
     insighter_logger.info(system)
@@ -436,7 +388,6 @@ async def format_filter(message, bot, state):
                 ),
 
             )
-            print()
             await state.update_data(instruction_message_id=message.message_id)
             await state.set_state(FSMSummaryFromAudioScenario.load_file)
             return None
