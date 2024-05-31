@@ -366,8 +366,8 @@ async def format_filter(message, bot, state):
     try:
         file_path = await file_path_coro
         income_file_format = await file_format_manager.define_format(file_path=file_path)
-
         if income_file_format in text_invoker.formats.make_list_of_formats():
+
             await bot.delete_message(
                 message_id=begin_message.message_id,
                 chat_id=begin_message.chat.id,
@@ -382,7 +382,7 @@ async def format_filter(message, bot, state):
                 disable_web_page_preview=True,
                 chat_id=message.chat.id,
                 text=LEXICON_RU["wrong_format"].format(
-                    income_file_format=message.content_type,
+                    income_file_format=income_file_format,
                     actual_formats=LEXICON_RU["actual_formats"],
 
                 ),
@@ -398,7 +398,6 @@ async def format_filter(message, bot, state):
 
         await state.update_data(instruction_message_id=message.message_id)
         await state.set_state(FSMSummaryFromAudioScenario.load_file)
-
 
 async def validate_youtube_url(url):
     # Шаблоны URL, которые поддерживают список видео, короткие ссылки и стандартные ссылки
